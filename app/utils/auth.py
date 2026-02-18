@@ -1,0 +1,117 @@
+import logging
+from app.core.app_states import AppState
+from app.core.logger import get_logger
+from app.core.gazu_client import gazu_client
+from app.config import Settings
+
+logger = get_logger(__name__)
+
+class AuthServices:
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def authenticate_user(email: str, password: str) -> dict:
+        """
+        Authenticate user using Gazu and return structured response.
+        """
+        try:
+            user = gazu_client.log_in(email, password)
+
+            if user and user.get("login") is True:
+                Settings.SESSION_FILE = user
+                gazu_client.files.download_person_avatar(user["user"]["id"], file_path=Settings.AVATAR_FILE)
+
+                logger.info(f"User authenticated: {user}")
+                return {
+                    "success": True,
+                    "message": "Authentication successful",
+                    "user": user
+                }
+            else:
+                logger.error("Authentication failed: User data not found")
+                return {
+                    "success": False,
+                    "message": "Authentication failed: User data not found"
+                }
+
+        except Exception as e:
+            logger.error(f"Authentication failed: {e}")
+            return {
+                "success": False,
+                "message": f"Authentication failed: {str(e)}"
+            }
+
+    @staticmethod
+    def api_req_logout() -> dict:
+        """
+        Log out current user using Gazu client.
+        """
+        try:
+            gazu_client.log_out()
+            logger.info("User logged out.")
+            return {
+                "success": True,
+                "message": "Successfully logged out"
+            }
+
+        except Exception as e:
+            logger.error(f"Logout failed: {e}")
+            return {
+                "success": False,
+                "message": f"Logout failed: {str(e)}"
+            }
+
+    @staticmethod
+    def get_current_user() -> dict:
+        """
+        Get current user information.
+        """
+        try:
+            user = gazu_client.user.is_authenticated()
+            if user:
+                logger.info(f"Current user: {user}")
+                return {
+                    "success": True,
+                    "user": user
+                }
+            else:
+                logger.error("No current user found.")
+                return {
+                    "success": False,
+                    "message": "No current user found."
+                }
+
+        except Exception as e:
+            logger.error(f"Error fetching current user: {e}")
+            return {
+                "success": False,
+                "message": f"Error fetching current user: {str(e)}"
+            }
+
+    @staticmethod
+    def get_user_by_id(user_id: str) -> dict:
+        """
+        Get user information by user ID.
+        """
+        try:
+            user = gazu_client.person.get_person(user_id)
+            if user:
+                logger.info(f"User data for ID {user_id}: {user}")
+                return {
+                    "success": True,
+                    "user": user
+                }
+            else:
+                logger.error(f"No user found with ID {user_id}.")
+                return {
+                    "success": False,
+                    "message": f"No user found with ID {user_id}."
+                }
+
+        except Exception as e:
+            logger.error(f"Error fetching user by ID {user_id}: {e}")
+            return {
+                "success": False,
+                "message": f"Error fetching user by ID {user_id}: {str(e)}"
+            }
