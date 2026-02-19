@@ -18,7 +18,10 @@ class HandleBLauncher(QWidget):
         self.ui = Ui_Form()
         self.ui.setupUi(self)
 
-        self.entities = [{"name": "Assets"}, {"name": "Shots"}]
+        self.entities = [
+            {"name": "Assets"}, 
+            # {"name": "Shots"}
+            ]
         self.departments = []
         self.projects = []
         self.sequences = []
@@ -56,6 +59,7 @@ class HandleBLauncher(QWidget):
         self.ui.comboBox_project.setEnabled(False)
         self.ui.comboBox_entity.setEnabled(False)
         self.ui.comboBox_episode.setEnabled(False)
+        self.ui.comboBox_type.setEnabled(False)
 
     def on_department_change(self):
         projects = ProjectServices.get_projects()
@@ -69,6 +73,7 @@ class HandleBLauncher(QWidget):
         self.ui.comboBox_project.setEnabled(True)
         self.ui.comboBox_entity.setEnabled(False)
         self.ui.comboBox_episode.setEnabled(False)
+        self.ui.comboBox_type.setEnabled(False)
 
     def on_project_change(self):
         self.ui.comboBox_entity.clear()
@@ -77,6 +82,7 @@ class HandleBLauncher(QWidget):
 
         self.ui.comboBox_entity.setEnabled(True)
         self.ui.comboBox_episode.setEnabled(False)
+        self.ui.comboBox_type.setEnabled(False)
     
     def on_entity_change(self):
         project_id = self.ui.comboBox_project.currentData()
@@ -91,21 +97,29 @@ class HandleBLauncher(QWidget):
         for episode in episodes:
             self.ui.comboBox_episode.addItem(episode["name"], episode["id"])
 
-        self.ui.comboBox_episode.setEnabled(True)
-
-    def on_episode_change(self):
         entity = self.ui.comboBox_entity.currentIndex()
         self.ui.listWidget_list.clear()
         self.paths = []
-
         if entity == 1:
             self.load_assets()
             self.ui.label_type.setVisible(True)
             self.ui.comboBox_type.setVisible(True)
+            self.ui.comboBox_type.setEnabled(True)
+            self.ui.label_episode.setVisible(False)
+            self.ui.comboBox_episode.setVisible(False)
+            self.ui.comboBox_episode.setEnabled(False)
         elif entity == 2:
             self.load_sequence_and_shot()
             self.ui.label_type.setVisible(False)
             self.ui.comboBox_type.setVisible(False)
+            self.ui.comboBox_type.setEnabled(False)
+            self.ui.label_episode.setVisible(True)
+            self.ui.comboBox_episode.setVisible(True)
+            self.ui.comboBox_episode.setEnabled(True)
+
+    # TODO: Implement episode change
+    def on_episode_change(self):
+        pass
 
     def on_asset_type_change(self):
         self.ui.listWidget_list.clear()
