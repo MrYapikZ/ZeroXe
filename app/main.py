@@ -12,6 +12,8 @@ from app.utils.auth import AuthServices
 from app.ui.main.main_window_ui import Ui_MainWindow as MainWindowUI
 from app.core.app_states import AppState
 
+from app.modules.blender.b_launcher.handle_b_launcher import HandleBLauncher
+
 class MainUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -45,7 +47,7 @@ class MainUI(QMainWindow):
             self.load_avatar_image(f"{Settings.AVATAR_FILE}")
 
         # Set up tabs
-        self.ui.tabWidget.addTab(DashboardHandler(), "Dashboard")
+        self.ui.tabWidget.addTab(HandleBLauncher(), "BLauncher")
 
 # PyQt Program =====================================================================================
     def handle_logout(self):
