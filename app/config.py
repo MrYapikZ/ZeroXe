@@ -17,8 +17,8 @@ class Settings:
     APP_NAME = "ZerØXe"
     BUILD_VERSION = "v0.0.1"
 
-    KITSU_API_URL=http://192.168.99.38/api
-    KITSU_ALT_API_URL=http://patokitsu.synology.me/api
+    KITSU_API_URL="http://192.168.99.38/api"
+    KITSU_ALT_API_URL="http://patokitsu.synology.me/api"
 
 
     CONFIG_DIR = get_config_dir(APP_NAME)
