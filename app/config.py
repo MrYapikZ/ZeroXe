@@ -17,6 +17,10 @@ class Settings:
     APP_NAME = "ZerØXe"
     BUILD_VERSION = "v0.0.1"
 
+    KITSU_API_URL=http://192.168.99.38/api
+    KITSU_ALT_API_URL=http://patokitsu.synology.me/api
+
+
     CONFIG_DIR = get_config_dir(APP_NAME)
     SESSION_FILE = os.path.join(CONFIG_DIR, "user", "gazu_session.json")
     FILES_DIR = os.path.join(CONFIG_DIR, "files")
