@@ -20,6 +20,13 @@ class Ui_Form(object):
         self.gridLayout_function = QtWidgets.QGridLayout()
         self.gridLayout_function.setObjectName("gridLayout_function")
         self.pushButton_open = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_open.setStyleSheet(".QPushButton {\n"
+"border: none;\n"
+"background-color:  black;\n"
+"border-radius: 5%;\n"
+"color: white;\n"
+"padding:4px;\n"
+"}")
         self.pushButton_open.setObjectName("pushButton_open")
         self.gridLayout_function.addWidget(self.pushButton_open, 2, 0, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
@@ -203,10 +210,15 @@ class Ui_Form(object):
         self.toolButton_blenderPath.setText(_translate("Form", "Locate"))
         self.label_blenderPath.setText(_translate("Form", "Blender"))
         self.label_department.setText(_translate("Form", "Department"))
+        self.comboBox_department.setPlaceholderText(_translate("Form", "-- Select Department --"))
         self.label_project.setText(_translate("Form", "Project"))
+        self.comboBox_project.setPlaceholderText(_translate("Form", "-- Select Project --"))
         self.label_entity.setText(_translate("Form", "Entity"))
+        self.comboBox_entity.setPlaceholderText(_translate("Form", "-- Select Entity --"))
         self.label_episode.setText(_translate("Form", "Episode"))
+        self.comboBox_episode.setPlaceholderText(_translate("Form", "-- Select Episode --"))
         self.label_type.setText(_translate("Form", "Type"))
+        self.comboBox_type.setPlaceholderText(_translate("Form", "-- Select Type --"))
         self.label_metadata.setText(_translate("Form", "Metadata"))
         self.label_task.setText(_translate("Form", "Task"))
         self.label_version.setText(_translate("Form", "Version"))
