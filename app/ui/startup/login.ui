@@ -55,12 +55,17 @@ border: 2px solid black;
 border-radius: 5%;
 }
 
+#widgetCard .QLabel {
+color: black;
+}
+
 #widgetCard #widgetButton {
 background-color: black;
 }
 
 #widgetCard .QLineEdit {
 border: none;
+background-color: white;
 }
 
 #widgetCard .QPushButton {

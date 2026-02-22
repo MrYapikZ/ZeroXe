@@ -19,18 +19,9 @@ class Ui_Form(object):
         self.gridLayout_main.setObjectName("gridLayout_main")
         self.gridLayout_function = QtWidgets.QGridLayout()
         self.gridLayout_function.setObjectName("gridLayout_function")
-        self.pushButton_open = QtWidgets.QPushButton(parent=Form)
-        self.pushButton_open.setStyleSheet(".QPushButton {\n"
-"border: none;\n"
-"background-color:  black;\n"
-"border-radius: 5%;\n"
-"color: white;\n"
-"padding:4px;\n"
-"}")
-        self.pushButton_open.setObjectName("pushButton_open")
-        self.gridLayout_function.addWidget(self.pushButton_open, 2, 0, 1, 1)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
-        self.gridLayout_function.addItem(spacerItem, 1, 0, 1, 1)
+        self.pushButton_upMaster = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_upMaster.setObjectName("pushButton_upMaster")
+        self.gridLayout_function.addWidget(self.pushButton_upMaster, 2, 0, 1, 1)
         self.gridWidget_blenderPath = QtWidgets.QWidget(parent=Form)
         self.gridWidget_blenderPath.setStyleSheet("#gridWidget_blenderPath .QWidget {\n"
 "background-color: White;\n"
@@ -63,7 +54,25 @@ class Ui_Form(object):
         self.label_blenderPath = QtWidgets.QLabel(parent=self.gridWidget_blenderPath)
         self.label_blenderPath.setObjectName("label_blenderPath")
         self.gridLayout_blenderPath.addWidget(self.label_blenderPath, 0, 0, 1, 2)
-        self.gridLayout_function.addWidget(self.gridWidget_blenderPath, 0, 0, 1, 1)
+        self.gridLayout_function.addWidget(self.gridWidget_blenderPath, 0, 0, 1, 2)
+        self.pushButton_open = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_open.setStyleSheet(".QPushButton {\n"
+"border: none;\n"
+"background-color:  black;\n"
+"border-radius: 5%;\n"
+"color: white;\n"
+"padding:4px;\n"
+"}")
+        self.pushButton_open.setObjectName("pushButton_open")
+        self.gridLayout_function.addWidget(self.pushButton_open, 4, 0, 1, 2)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.gridLayout_function.addItem(spacerItem, 1, 0, 1, 2)
+        self.pushButton_upVersion = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_upVersion.setObjectName("pushButton_upVersion")
+        self.gridLayout_function.addWidget(self.pushButton_upVersion, 2, 1, 1, 1)
+        self.pushButton_unlock = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_unlock.setObjectName("pushButton_unlock")
+        self.gridLayout_function.addWidget(self.pushButton_unlock, 3, 0, 1, 2)
         self.gridLayout_main.addLayout(self.gridLayout_function, 1, 1, 1, 1)
         self.verticalWidget_search = QtWidgets.QWidget(parent=Form)
         self.verticalWidget_search.setStyleSheet("/* The main box */\n"
@@ -206,9 +215,12 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.pushButton_open.setText(_translate("Form", "Open"))
+        self.pushButton_upMaster.setText(_translate("Form", "UpMaster"))
         self.toolButton_blenderPath.setText(_translate("Form", "Locate"))
         self.label_blenderPath.setText(_translate("Form", "Blender"))
+        self.pushButton_open.setText(_translate("Form", "Open"))
+        self.pushButton_upVersion.setText(_translate("Form", "UpVersion"))
+        self.pushButton_unlock.setText(_translate("Form", "Unlock"))
         self.label_department.setText(_translate("Form", "Department"))
         self.comboBox_department.setPlaceholderText(_translate("Form", "-- Select Department --"))
         self.label_project.setText(_translate("Form", "Project"))
