@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QStringListModel
@@ -5,12 +6,14 @@ from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox, QFileDialog
 
 from app.ui.modules.blender.b_launcher_ui import Ui_Form
+from app.core.app_states import AppState
 from app.utils.api.gazu.person import PersonServices
 from app.utils.api.gazu.project import ProjectServices
 from app.utils.api.gazu.shot import ShotServices
 from app.utils.api.gazu.asset import AssetServices
 from app.utils.api.gazu.task import TaskServices
 from app.utils.subprocess import SubprocessServices
+from app.utils.versioning import VersioningSystem
 
 class HandleBLauncher(QWidget):
     def __init__(self):
@@ -31,6 +34,7 @@ class HandleBLauncher(QWidget):
         self.asset_types = []
 
         self.selected_item = None
+        self.selected_path = None
 
         self.load_departments() 
         self.mount_function()
@@ -44,8 +48,9 @@ class HandleBLauncher(QWidget):
         self.ui.comboBox_episode.currentIndexChanged.connect(self.on_episode_change)
         self.ui.comboBox_type.currentIndexChanged.connect(self.on_asset_type_change)
         self.ui.listWidget_list.itemDoubleClicked.connect(self.on_widget_list_double_click)
+        self.ui.listWidget_version.itemDoubleClicked.connect(self.on_widget_version_double_click)
         self.ui.toolButton_blenderPath.clicked.connect(self.on_select_blender)
-        self.ui.pushButton_open.clicked.connect(self.open_selected_file)
+        self.ui.pushButton_open.clicked.connect(self.on_open_selected_file)
 
     def load_departments(self):
         departments = PersonServices.get_departments()
@@ -137,6 +142,11 @@ class HandleBLauncher(QWidget):
         asset_id = item.data(Qt.ItemDataRole.UserRole)
         self.load_metadata(asset_id)
 
+    def on_widget_version_double_click(self, item: QListWidgetItem):
+        version_name = item.text()
+        version_path = item.data(Qt.ItemDataRole.UserRole)
+        self.load_version_metadata(version_name, version_path)
+
     def on_select_blender(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Blender", "", "All Files (*)")
         if file_path:
@@ -178,6 +188,40 @@ class HandleBLauncher(QWidget):
         self.shots = shots
 
         self.ui.listWidget_sequence.clear()
+
+    def metadata_table(self, custom_field_map: dict = None, custom_asset_data: dict = None):
+        if self.selected_item is None:
+            return
+
+        asset_data = self.selected_item
+
+        metadata_model = QStandardItemModel()
+        metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
+
+        metadata_field_map = {
+            "name": "Name",
+            "status": "Status",
+            "asset_type_name": "Type",
+        }
+        if custom_field_map:
+            metadata_field_map = custom_field_map
+        if custom_asset_data:
+            asset_data = custom_asset_data
+
+        for key, label in metadata_field_map.items():
+            key_value = asset_data.get(key, "")
+            if key_value:
+                label = QStandardItem(label)
+                label.setEditable(False)
+                item = QStandardItem(key_value)
+                item.setEditable(False)
+                metadata_model.appendRow([
+                    label,
+                    item
+                ])
+
+        self.ui.tableView_metadata.setModel(metadata_model)
+        self.ui.tableView_metadata.setWordWrap(True)
         
     def load_metadata(self, asset_id):
         if asset_id is None:
@@ -188,26 +232,7 @@ class HandleBLauncher(QWidget):
             asset_tasks = TaskServices.get_tasks_by_asset_id(asset_id)
             self.selected_item = asset_data
 
-            metadata_model = QStandardItemModel()
-            metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
-
-            metadata_field_map = {
-                "name": "Name",
-                "status": "Status",
-                "asset_type_name": "Type",
-            }
-
-            for key, label in metadata_field_map.items():
-                key_value = asset_data.get(key, "")
-                if key_value:
-                    label = QStandardItem(label)
-                    label.setEditable(False)
-                    item = QStandardItem(key_value)
-                    item.setEditable(False)
-                    metadata_model.appendRow([
-                        label,
-                        item
-                    ])
+            self.metadata_table()
 
             task_model = QStandardItemModel()
             task_model.setHorizontalHeaderLabels(["Name", "Status"])
@@ -230,29 +255,89 @@ class HandleBLauncher(QWidget):
                             item_status
                         ])
 
-            self.ui.tableView_metadata.setModel(metadata_model)
             self.ui.tableView_task.setModel(task_model)
-
-            self.ui.tableView_metadata.setWordWrap(True)
             self.ui.tableView_task.setWordWrap(True)
-            
-    def open_selected_file(self):
+
+        self.load_version()
+
+    def load_version(self):
+        self.ui.listWidget_version.clear()
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+        version_folder = VersioningSystem.get_version_folder(master_path)
+        version_info_list = VersioningSystem.get_version_info_list(version_folder)
+        master_item = QListWidgetItem("Master")
+        master_item.setData(Qt.ItemDataRole.UserRole, f"{master_path}/{self.selected_item["name"]}.blend" )
+        self.ui.listWidget_version.addItem(master_item)
+        for version_info in version_info_list:
+            item = QListWidgetItem(version_info["version"])
+            item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
+            self.ui.listWidget_version.addItem(item)
+        self.selected_path = f"{master_path}/{self.selected_item["name"]}.blend"
+
+    def load_version_metadata(self, version_name: str, version_path: str):
+        if self.selected_item is None:
+            return
+
+        self.selected_path = version_path
+
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            custom_field_map = {
+                "name": "Name",
+                "status": "Status",
+                "asset_type_name": "Type",
+                "version": "Version",
+            }
+            custom_asset_data = {
+                "name": self.selected_item["name"],
+                "status": self.selected_item["status"],
+                "asset_type_name": self.selected_item["asset_type_name"],
+                "version": version_name,
+            }
+            self.metadata_table(custom_field_map=custom_field_map, custom_asset_data=custom_asset_data)
+
+    def on_open_selected_file(self):
+        blender_program = self.ui.lineEdit_blenderPath.text().strip()
+        if self.selected_path is None or not blender_program:
+            return
+
+        file_path = Path(self.selected_path)
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            if not file_path.exists():
+                base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+                master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+                model = self.ui.tableView_metadata.model()
+                version_value = ""
+                for row in range(model.rowCount()):
+                    if str(model.index(row, 0).data()).strip().lower() == "version":
+                        version_value = str(model.index(row, 1).data()).strip()
+                        break
+                if version_value in [None, "", "Master"]:
+                    init_version_path = VersioningSystem.get_init_version_path(file_path)
+                    init_version_path.parent.mkdir(parents=True, exist_ok=True)
+                    create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+                    SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+                    file_path = init_version_path
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+                else:
+                    create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}')"
+                    SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+
+        SubprocessServices.popen_command([blender_program, file_path])
+
+    # TODO: Implement this function
+    def on_up_master(self):
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
         if self.selected_item is None or not blender_program:
             return
 
         if self.ui.comboBox_entity.currentIndex() == 1:
-            base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
-            if not base_path:
-                return
-            file_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}/{self.selected_item["name"]}.blend")
+            version_selected = self.ui.listView_version.currentIndex()
+            file_path = Path(self.selected_path)
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            if not file_path.exists():
-                create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}')"
-                SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
-
-        SubprocessServices.popen_command([blender_program, file_path])
-
     
     def wire_search_list(self):
         le = self.ui.lineEdit_list
