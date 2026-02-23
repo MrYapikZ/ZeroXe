@@ -10,7 +10,7 @@ class BlenderFunctions:
 
 			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
 
-			bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=true)
+			bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=True)
 
 			bpy.ops.wm.quit_blender()
 			"""))
@@ -21,6 +21,7 @@ class BlenderFunctions:
             FILEPATH=filepath,
             VERSION_PATH=version_path
 		)
+		return script, version_path
 
 	def up_master(filepath: str):
 		tpl = Template(dedent("""
@@ -28,8 +29,8 @@ class BlenderFunctions:
 
 			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
 
-			bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=true)
-			bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=true)
+			bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=True)
+			bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=True)
 
 			bpy.ops.wm.quit_blender()
 		"""))
@@ -42,3 +43,4 @@ class BlenderFunctions:
             VERSION_PATH=version_path,
 			MASTER_PATH=master_path
 		)
+		return script, version_path, master_path

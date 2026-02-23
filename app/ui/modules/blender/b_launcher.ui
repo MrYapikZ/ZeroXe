@@ -325,6 +325,13 @@ border:none;
          </widget>
         </item>
         <item>
+         <widget class="QRadioButton" name="radioButton_showMaster">
+          <property name="text">
+           <string>Show Master</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QListWidget" name="listWidget_version"/>
         </item>
        </layout>

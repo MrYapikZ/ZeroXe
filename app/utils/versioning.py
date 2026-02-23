@@ -23,8 +23,9 @@ class VersioningSystem:
         p = Path(path)
         if not p.exists():
             return []
+        ignore_list = [".blend1", ".tmp"]
         pattern = re.compile(rf"{re.escape(Settings.VERSIONING_STARTWITH)}\d+", re.IGNORECASE)
-        return [f.name for f in p.iterdir() if f.is_file() and pattern.search(f.name)]
+        return [f.name for f in p.iterdir() if f.is_file() and pattern.search(f.name) and f.suffix.lower() not in ignore_list]
 
     @staticmethod
     def get_version_files_number(path: str):
@@ -96,24 +97,29 @@ class VersioningSystem:
             prefix = match.group(1)
             v_marker = Settings.VERSIONING_STARTWITH
             number_str = match.group(2)
-            extension = match.group(4)
+            extension = match.group(3)
+            padding = len(number_str)
             next_number = int(number_str) + 1
-            return f"{prefix}{v_marker}{next_number}{extension}"
+            next_number_str = str(next_number).zfill(padding)
+            return f"{prefix}{v_marker}{next_number_str}{extension}"
         return None
 
     @staticmethod
     def get_next_version_path(path: str):
-        next_version = VersioningSystem.get_next_version(path)
+        path_obj = Path(path)
+        next_version = VersioningSystem.get_next_version(str(path_obj.parent))
         if not next_version:
             return None
-        return VersioningSystem.get_version_folder(path) / next_version
+        return path_obj.parent / next_version
 
     @staticmethod
     def get_master_path(version_path: str):
         version_path = Path(version_path)
-        parent_dir = version_path.parent
+        parent_dir = version_path.parent.parent
+        extension = version_path.suffix
         pattern = rf"{re.escape(Settings.VERSIONING_STARTWITH)}\d+(\.[^.]+)?$"
         master_name = re.sub(pattern, "", version_path.name, flags=re.IGNORECASE)
+        master_name = f"{master_name.rstrip('_')}{extension}"
         return parent_dir / master_name
 
     @staticmethod
@@ -136,7 +142,7 @@ class VersioningSystem:
 
     @staticmethod
     def init_log(base_path: str, file_path: str, locked: bool, timestamp: float, author: str):
-        file_name = Path(file_path).name
+        file_name = Path(file_path).stem
 
         if not file_name:
             return
@@ -158,16 +164,35 @@ class VersioningSystem:
 
     @staticmethod
     def update_log(base_path: str, file_path: str, locked: bool, timestamp: float, author: str):
-        file_name = Path(file_path).name
+        file_name = Path(file_path).stem
 
         if not file_name:
             return
 
         log_folder = VersioningSystem.get_version_log_folder(base_path)
         log_file = log_folder / f"{file_name}.json"
-
+        if not log_file.exists():
+            return None
         log_data = JsonManager.load_json(log_file)
         next_log_id = len(log_data.get("logs", [])) + 1
         log_data["locked"] = locked
         log_data["logs"].append({"log": next_log_id, "date": timestamp, "author": author, "locked": locked})
         JsonManager.update_json(log_file, log_data)
+
+    @staticmethod
+    def get_latest_log(base_path: str, file_path: str = None):
+        target = file_path or base_path
+        file_name = Path(target).stem
+
+        if not file_name:
+            return None
+
+        log_folder = VersioningSystem.get_version_log_folder(base_path)
+        log_file = log_folder / f"{file_name}.json"
+        if not log_file.exists():
+            return None
+        log_data = JsonManager.load_json(log_file)
+        logs = log_data.get("logs", [])
+        if not logs:
+            return None
+        return logs[-1]

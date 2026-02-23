@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from datetime import datetime
 
 from PyQt6.QtCore import Qt, QStringListModel
 from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
@@ -14,6 +15,7 @@ from app.utils.api.gazu.asset import AssetServices
 from app.utils.api.gazu.task import TaskServices
 from app.utils.subprocess import SubprocessServices
 from app.utils.versioning import VersioningSystem
+from app.utils.blender_functions import BlenderFunctions
 
 class HandleBLauncher(QWidget):
     def __init__(self):
@@ -51,6 +53,10 @@ class HandleBLauncher(QWidget):
         self.ui.listWidget_version.itemDoubleClicked.connect(self.on_widget_version_double_click)
         self.ui.toolButton_blenderPath.clicked.connect(self.on_select_blender)
         self.ui.pushButton_open.clicked.connect(self.on_open_selected_file)
+        self.ui.pushButton_upMaster.clicked.connect(self.on_up_master)
+        self.ui.pushButton_upVersion.clicked.connect(self.on_up_version)
+        self.ui.pushButton_unlock.clicked.connect(self.on_unlock_file)
+        self.ui.radioButton_showMaster.toggled.connect(lambda checked: self.load_version(checked))
 
     def load_departments(self):
         departments = PersonServices.get_departments()
@@ -189,11 +195,35 @@ class HandleBLauncher(QWidget):
 
         self.ui.listWidget_sequence.clear()
 
+    def load_latest_log(self, file_path: str = None):
+        if self.selected_item is None:
+            return
+
+        asset_data = self.selected_item
+
+        base_path = [i for i in self.paths if i["entity_type_id"] == asset_data["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{asset_data["name"]}")
+
+        file_log = VersioningSystem.get_latest_log(master_path, file_path)
+        if file_log:
+            timestamp = file_log.get("date")
+            file_log["date"] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "N/A"
+            author = file_log.get("author")
+            file_log["author"] = f"{PersonServices.get_person_by_id(author).get("first_name", "")} {PersonServices.get_person_by_id(author).get("last_name", "")}"
+            file_log["locked"] = str(file_log["locked"])
+        return file_log
+
     def metadata_table(self, custom_field_map: dict = None, custom_asset_data: dict = None):
         if self.selected_item is None:
             return
 
         asset_data = self.selected_item
+
+        file_log = self.load_latest_log()
+        if file_log:
+            asset_data["date"] = file_log["date"]
+            asset_data["author"] = file_log["author"]
+            asset_data["locked"] = file_log["locked"]
 
         metadata_model = QStandardItemModel()
         metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
@@ -202,6 +232,9 @@ class HandleBLauncher(QWidget):
             "name": "Name",
             "status": "Status",
             "asset_type_name": "Type",
+            "locked": "Locked",
+            "date": "Date",
+            "author": "Author",
         }
         if custom_field_map:
             metadata_field_map = custom_field_map
@@ -260,15 +293,16 @@ class HandleBLauncher(QWidget):
 
         self.load_version()
 
-    def load_version(self):
+    def load_version(self, show_master: bool = False):
         self.ui.listWidget_version.clear()
         base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
         master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
         version_folder = VersioningSystem.get_version_folder(master_path)
         version_info_list = VersioningSystem.get_version_info_list(version_folder)
-        master_item = QListWidgetItem("Master")
-        master_item.setData(Qt.ItemDataRole.UserRole, f"{master_path}/{self.selected_item["name"]}.blend" )
-        self.ui.listWidget_version.addItem(master_item)
+        if show_master:
+            master_item = QListWidgetItem("Master")
+            master_item.setData(Qt.ItemDataRole.UserRole, f"{master_path}/{self.selected_item["name"]}.blend" )
+            self.ui.listWidget_version.addItem(master_item)
         for version_info in version_info_list:
             item = QListWidgetItem(version_info["version"])
             item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
@@ -287,26 +321,44 @@ class HandleBLauncher(QWidget):
                 "status": "Status",
                 "asset_type_name": "Type",
                 "version": "Version",
+                "date": "Date",
+                "author": "Author",
+                "locked": "Locked",
             }
             custom_asset_data = {
-                "name": self.selected_item["name"],
-                "status": self.selected_item["status"],
-                "asset_type_name": self.selected_item["asset_type_name"],
-                "version": version_name,
+                    "name": self.selected_item["name"],
+                    "status": self.selected_item["status"],
+                    "asset_type_name": self.selected_item["asset_type_name"],
+                    "version": version_name,
             }
+            file_log = self.load_latest_log(version_path)
+            if file_log:
+                custom_asset_data.update({
+                    "date": file_log["date"],
+                    "author": file_log["author"],
+                    "locked": file_log["locked"],
+                })  
             self.metadata_table(custom_field_map=custom_field_map, custom_asset_data=custom_asset_data)
 
-    def on_open_selected_file(self):
+    def on_open_selected_file(self):     
+        file_path = Path(self.selected_path)
+        if (self.load_latest_log(file_path) or {}).get("locked", "").lower() == "true":
+            print("locked")
+            return
+        
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
         if self.selected_path is None or not blender_program:
+            print("no path")
             return
 
-        file_path = Path(self.selected_path)
+        print("pass")
+
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+
         if self.ui.comboBox_entity.currentIndex() == 1:
             file_path.parent.mkdir(parents=True, exist_ok=True)
             if not file_path.exists():
-                base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
-                master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
                 model = self.ui.tableView_metadata.model()
                 version_value = ""
                 for row in range(model.rowCount()):
@@ -318,27 +370,64 @@ class HandleBLauncher(QWidget):
                     init_version_path.parent.mkdir(parents=True, exist_ok=True)
                     create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
                     SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
-                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
                     file_path = init_version_path
-                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
                 else:
                     create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}')"
                     SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
-                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("id", ""))
+                    VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
 
-        SubprocessServices.popen_command([blender_program, file_path])
+        SubprocessServices.popen_command_with_callback([blender_program, file_path], callback=self.on_blender_close)
+        VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=True, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
 
-    # TODO: Implement this function
+    def on_blender_close(self):
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+        file_path = Path(self.selected_path)
+        if self.load_latest_log(file_path).get("locked", False):
+            VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+
     def on_up_master(self):
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
         if self.selected_item is None or not blender_program:
             return
 
+        if self.ui.listWidget_version.currentItem() is None:
+            return
+
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+
         if self.ui.comboBox_entity.currentIndex() == 1:
-            version_selected = self.ui.listView_version.currentIndex()
-            file_path = Path(self.selected_path)
-            file_path.parent.mkdir(parents=True, exist_ok=True)
+            version_selected = self.ui.listWidget_version.currentItem()
+            script, version_path, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole))
+            print(script)
+            SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
+            VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+            VersioningSystem.update_log(base_path=str(master_path), file_path=str(master_blend_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
     
+    def on_up_version(self):
+        blender_program = self.ui.lineEdit_blenderPath.text().strip()
+        if self.selected_item is None or not blender_program:
+            return
+
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            version_selected = self.ui.listWidget_version.currentItem()
+            script, version_path = BlenderFunctions.up_version(version_selected.data(Qt.ItemDataRole.UserRole))
+            SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
+            VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+
+    def on_unlock_file(self):
+        base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
+        master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
+        file_path = Path(self.selected_path)
+        if self.load_latest_log(file_path).get("locked", False):
+            VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+
     def wire_search_list(self):
         le = self.ui.lineEdit_list
         if le:
