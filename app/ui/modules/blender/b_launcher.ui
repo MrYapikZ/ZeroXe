@@ -325,7 +325,7 @@ border:none;
          </widget>
         </item>
         <item>
-         <widget class="QListView" name="listView_version"/>
+         <widget class="QListWidget" name="listWidget_version"/>
         </item>
        </layout>
       </widget>

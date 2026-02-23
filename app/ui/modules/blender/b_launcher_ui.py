@@ -203,9 +203,9 @@ class Ui_Form(object):
         self.label_version = QtWidgets.QLabel(parent=self.verticalWidget_version)
         self.label_version.setObjectName("label_version")
         self.verticalLayout_version.addWidget(self.label_version)
-        self.listView_version = QtWidgets.QListView(parent=self.verticalWidget_version)
-        self.listView_version.setObjectName("listView_version")
-        self.verticalLayout_version.addWidget(self.listView_version)
+        self.listWidget_version = QtWidgets.QListWidget(parent=self.verticalWidget_version)
+        self.listWidget_version.setObjectName("listWidget_version")
+        self.verticalLayout_version.addWidget(self.listWidget_version)
         self.gridLayout_main.addWidget(self.verticalWidget_version, 1, 2, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_main, 0, 0, 1, 1)
 
