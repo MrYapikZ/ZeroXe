@@ -12,7 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(294, 429)
+        Form.resize(280, 277)
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setObjectName("gridLayout")
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
@@ -38,6 +38,7 @@ class Ui_Form(object):
 "#widgetCard .QLineEdit {\n"
 "border: none;\n"
 "background-color: white;\n"
+"color:black;\n"
 "}\n"
 "\n"
 "#widgetCard .QPushButton {\n"

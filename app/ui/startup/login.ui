@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>294</width>
-    <height>429</height>
+    <width>280</width>
+    <height>277</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -66,6 +66,7 @@ background-color: black;
 #widgetCard .QLineEdit {
 border: none;
 background-color: white;
+color:black;
 }
 
 #widgetCard .QPushButton {

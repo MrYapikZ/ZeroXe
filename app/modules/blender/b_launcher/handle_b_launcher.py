@@ -301,7 +301,7 @@ class HandleBLauncher(QWidget):
         version_info_list = VersioningSystem.get_version_info_list(version_folder)
         if show_master:
             master_item = QListWidgetItem("Master")
-            master_item.setData(Qt.ItemDataRole.UserRole, f"{master_path}/{self.selected_item["name"]}.blend" )
+            master_item.setData(Qt.ItemDataRole.UserRole, f"{master_path}/{self.selected_item["name"]}.blend")
             self.ui.listWidget_version.addItem(master_item)
         for version_info in version_info_list:
             item = QListWidgetItem(version_info["version"])
@@ -340,18 +340,22 @@ class HandleBLauncher(QWidget):
                 })  
             self.metadata_table(custom_field_map=custom_field_map, custom_asset_data=custom_asset_data)
 
+    def reload_version_metadata(self):
+        version_item = self.ui.listWidget_version.currentItem()
+        version_name = "Master" if version_item is None else version_item.text()
+        version_path = self.selected_path if version_item is None else version_item.data(Qt.ItemDataRole.UserRole)
+        self.load_version_metadata(version_name, version_path)
+
     def on_open_selected_file(self):     
         file_path = Path(self.selected_path)
         if (self.load_latest_log(file_path) or {}).get("locked", "").lower() == "true":
-            print("locked")
+            QMessageBox.warning(self, "Warning", "This file is locked.")
             return
         
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
         if self.selected_path is None or not blender_program:
-            print("no path")
+            QMessageBox.warning(self, "Warning", "Please select a path and blender program.")
             return
-
-        print("pass")
 
         base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
         master_path = Path(f"{base_path[0].get("description", "")}/{self.selected_item["name"]}")
@@ -380,6 +384,7 @@ class HandleBLauncher(QWidget):
 
         SubprocessServices.popen_command_with_callback([blender_program, file_path], callback=self.on_blender_close)
         VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=True, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+        self.reload_version_metadata()
 
     def on_blender_close(self):
         base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
@@ -387,6 +392,7 @@ class HandleBLauncher(QWidget):
         file_path = Path(self.selected_path)
         if self.load_latest_log(file_path).get("locked", False):
             VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+        self.reload_version_metadata()
 
     def on_up_master(self):
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
@@ -402,11 +408,12 @@ class HandleBLauncher(QWidget):
         if self.ui.comboBox_entity.currentIndex() == 1:
             version_selected = self.ui.listWidget_version.currentItem()
             script, version_path, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole))
-            print(script)
             SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
             VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
             VersioningSystem.update_log(base_path=str(master_path), file_path=str(master_blend_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
-    
+        self.reload_version_metadata()
+        self.load_version(show_master=self.ui.radioButton_showMaster.isChecked())
+
     def on_up_version(self):
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
         if self.selected_item is None or not blender_program:
@@ -420,6 +427,8 @@ class HandleBLauncher(QWidget):
             script, version_path = BlenderFunctions.up_version(version_selected.data(Qt.ItemDataRole.UserRole))
             SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
             VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+        self.reload_version_metadata()
+        self.load_version(show_master=self.ui.radioButton_showMaster.isChecked())
 
     def on_unlock_file(self):
         base_path = [i for i in self.paths if i["entity_type_id"] == self.selected_item["asset_type_id"]]
@@ -427,6 +436,7 @@ class HandleBLauncher(QWidget):
         file_path = Path(self.selected_path)
         if self.load_latest_log(file_path).get("locked", False):
             VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=AppState().user_data.get("user", "").get("id", ""))
+        self.reload_version_metadata()
 
     def wire_search_list(self):
         le = self.ui.lineEdit_list

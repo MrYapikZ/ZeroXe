@@ -23,11 +23,11 @@ class MainUI(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle(f"{Settings.APP_NAME} - {Settings.BUILD_VERSION}")
 
-        if self.prelaunch():  # returns True on successful login
+        if self.prelaunch():
             self.load_ui()
-            self.show()  # Show main window only after login
+            self.show()
         else:
-            self.close()  # Close if login failed
+            self.close()
 
     def prelaunch(self):
         # Show login window first
@@ -47,17 +47,18 @@ class MainUI(QMainWindow):
             self.load_avatar_image(f"{Settings.AVATAR_FILE}")
 
         # Set up tabs
+        self.ui.tabWidget.clear()
         self.ui.tabWidget.addTab(HandleBLauncher(), "BLauncher")
 
 # PyQt Program =====================================================================================
     def handle_logout(self):
-        # Logic for handling logout
         print("[!] Logging out...")
         AuthServices.api_req_logout()
-
-        # Re-init login flow
-        if not self.prelaunch():
-            self.close()  # User cancelled login again
+        if self.prelaunch():
+            self.load_ui()
+            self.show()
+        else:
+            self.close()
 
     def load_avatar_image(self, file_path):
         # Load image directly from local file path
