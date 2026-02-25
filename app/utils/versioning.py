@@ -7,15 +7,15 @@ from app.utils.json_manager import JsonManager
 
 class VersioningSystem:
     @staticmethod
-    def get_version_folder(path: str):
+    def get_version_folder(path: str | Path):
         return Path(path) / Settings.VERSIONING_FOLDER
 
     @staticmethod
-    def get_version_log_folder(path: str):
+    def get_version_log_folder(path: str | Path):
         return Path(path) / Settings.VERSIONING_LOG_FOLDER / "logs"
 
     @staticmethod
-    def get_version_log_file(path: str):
+    def get_version_log_file(path: str | Path):
         return Path(path) / Settings.VERSIONING_LOG_FOLDER / "log.json"
 
     @staticmethod
@@ -60,7 +60,7 @@ class VersioningSystem:
         files_with_date = []
         for file in files:
             files_with_date.append(
-                (file, FileManager.get_file_last_modified(path / file))
+                (file, FileManager.get_file_last_modified(str(Path(path) / file)))
             )
         return files_with_date
 
@@ -69,7 +69,7 @@ class VersioningSystem:
         file = VersioningSystem.get_latest_version(path)
         if not file:
             return None
-        return (file, FileManager.get_file_last_modified(path / file))
+        return (file, FileManager.get_file_last_modified(str(Path(path) / file)))
 
     @staticmethod
     def get_latest_version(path: str):
@@ -113,7 +113,7 @@ class VersioningSystem:
         return path_obj.parent / next_version
 
     @staticmethod
-    def get_master_path(version_path: str):
+    def get_master_path(version_path: str | Path):
         version_path = Path(version_path)
         parent_dir = version_path.parent.parent
         extension = version_path.suffix
@@ -133,7 +133,7 @@ class VersioningSystem:
     @staticmethod
     def get_init_version_path(master_path: str, version_number: int = 0, padding: int = 3):
         path_obj = Path(master_path)
-        version_dir = VersioningSystem.get_version_folder(path_obj.parent)    
+        version_dir = VersioningSystem.get_version_folder(str(path_obj.parent))    
         base_name = path_obj.stem
         extension = path_obj.suffix
         version_str = str(version_number).zfill(padding)
@@ -151,7 +151,7 @@ class VersioningSystem:
         log_folder.mkdir(parents=True, exist_ok=True)
         log_file = log_folder / f"{file_name}.json"
         JsonManager.save_json(
-            log_file,
+            str(log_file),
             {
                 "file": file_name,
                 "file_path": file_path,
@@ -173,14 +173,14 @@ class VersioningSystem:
         log_file = log_folder / f"{file_name}.json"
         if not log_file.exists():
             return None
-        log_data = JsonManager.load_json(log_file)
+        log_data = JsonManager.load_json(str(log_file))
         next_log_id = len(log_data.get("logs", [])) + 1
         log_data["locked"] = locked
         log_data["logs"].append({"log": next_log_id, "date": timestamp, "author": author, "locked": locked})
-        JsonManager.update_json(log_file, log_data)
+        JsonManager.update_json(str(log_file), log_data)
 
     @staticmethod
-    def get_latest_log(base_path: str, file_path: str = None):
+    def get_latest_log(base_path: str, file_path: str | None  = None):
         target = file_path or base_path
         file_name = Path(target).stem
 
@@ -191,7 +191,7 @@ class VersioningSystem:
         log_file = log_folder / f"{file_name}.json"
         if not log_file.exists():
             return None
-        log_data = JsonManager.load_json(log_file)
+        log_data = JsonManager.load_json(str(log_file))
         logs = log_data.get("logs", [])
         if not logs:
             return None

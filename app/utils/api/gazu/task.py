@@ -6,6 +6,10 @@ class TaskServices:
         return gazu_client.task.all_tasks_for_asset(asset_id)
 
     @staticmethod
+    def get_tasks_by_shot_id(shot_id):
+        return gazu_client.task.all_tasks_for_shot(shot_id)
+
+    @staticmethod
     def get_task_by_id(task_id):
         return gazu_client.task.get_task(task_id)
 

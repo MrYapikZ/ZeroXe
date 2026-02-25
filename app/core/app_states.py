@@ -20,3 +20,8 @@ class AppState:
         
     def set_user_data(self, user_data):
         self.user_data = user_data
+
+    def get_user_id(self):
+        if self.user_data and "user" in self.user_data:
+            return self.user_data["user"].get("id")
+        return None

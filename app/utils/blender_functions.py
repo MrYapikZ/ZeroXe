@@ -23,6 +23,7 @@ class BlenderFunctions:
 		)
 		return script, version_path
 
+	@staticmethod
 	def up_master(filepath: str):
 		tpl = Template(dedent("""
 			import bpy
