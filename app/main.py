@@ -64,8 +64,7 @@ class MainUI(QMainWindow):
         # Load image directly from local file path
         pixmap = QPixmap(file_path)
         if not pixmap.isNull():  # Check if image loaded successfully
-            scaled_pixmap = pixmap.scaled(25, 25, Qt.AspectRatioMode.KeepAspectRatio,
-                                          Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(25, 25, Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
             self.ui.label_userimage.setPixmap(scaled_pixmap)
             self.ui.label_userimage.setFixedSize(25, 25)
             self.ui.label_userimage.setScaledContents(True)
