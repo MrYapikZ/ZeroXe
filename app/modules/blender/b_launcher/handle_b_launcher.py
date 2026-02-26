@@ -623,6 +623,20 @@ class HandleBLauncher(QWidget):
         prop = [p.strip() for p in shot_data[0].get("data", {}).get("prop", "").split(",") if p.strip()] if shot_data else []
         vehicle = [v.strip() for v in shot_data[0].get("data", {}).get("vehicle", "").split(",") if v.strip()] if shot_data else []
 
+        frame_in = int(shot_data[0].get("data", {}).get("frame_in", "0"))
+        frame_out = int(shot_data[0].get("data", {}).get("frame_out", "0"))
+        fps = int(shot_data[0].get("data", {}).get("fps", "24"))
+
+        res_str = str(shot_data[0].get("data", {}).get("resolution", "1920x1080"))
+        resolution = [int(res.strip()) for res in res_str.split('x')] if 'x' in res_str else []
+        
+        setting_data = {
+            "frame_in": frame_in,
+            "frame_out": frame_out,
+            "fps": fps,
+            "resolution": resolution
+        }
+
         project_id = self.ui.comboBox_project.currentData()
         assets = AssetServices.get_assets_by_project_id(project_id)
         
@@ -656,7 +670,8 @@ class HandleBLauncher(QWidget):
 
             if reply == QMessageBox.StandardButton.Cancel:
                 return
-        create_script = BlenderFunctions.build_animation_script(filepath=file_path, version_path=version_path, collections=collections)
+        create_script = BlenderFunctions.build_animation_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
+        print(create_script)
         return create_script
 
     def wire_search_list(self):
