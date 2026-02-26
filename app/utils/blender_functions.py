@@ -53,6 +53,25 @@ class BlenderFunctions:
 			from pathlib import Path
 
 			collections = $COLLECTIONS
+
+			# Clear all existing collections and objects before linking new ones
+			def clear_all():
+				# Remove all objects
+				for obj in bpy.data.objects:
+					bpy.data.objects.remove(obj, do_unlink=True)
+
+				# Remove all collections
+				for collection in bpy.data.collections:
+					bpy.data.collections.remove(collection)
+
+			clear_all()
+
+			def select_only(obj):
+				for o in bpy.context.view_layer.objects:
+					o.select_set(False)
+				obj.select_set(True)
+				bpy.context.view_layer.objects.active = obj
+
 			def link_collection(collections_dict):
 				for category_name, file_paths in collections_dict.items():
 					# Create or get top-level category collection
@@ -81,7 +100,36 @@ class BlenderFunctions:
 						for linked_collection in data_to.collections:
 							if linked_collection and linked_collection.name not in category_collection.children:
 								category_collection.children.link(linked_collection)
-								print(f"Linked collection '{linked_collection.name}' into '{category_name}'")
+								armatures = [obj for obj in linked_collection.all_objects if obj.type == 'ARMATURE']
+
+								if not armatures:
+									print(f"[SKIP] '{linked_collection.name}' tidak punya Armature.")
+									continue
+
+								# Override the entire collection
+								for arm in armatures:
+									select_only(arm)  # Ensure the object is active and selected
+									bpy.context.view_layer.update()  # Update the context
+
+									try:
+										bpy.ops.object.make_override_library(collection=linked_collection.session_uid)
+									except Exception:
+										bpy.ops.object.make_override_library()
+
+								# Ensure the overridden collection remains in the category collection and remove it from the root
+								if linked_collection.name in bpy.data.collections:
+									overridden_collection = bpy.data.collections[linked_collection.name]
+									if overridden_collection.name not in [child.name for child in category_collection.children]:
+										category_collection.children.link(overridden_collection)
+										print(f"Kept overridden collection '{overridden_collection.name}' in category '{category_collection.name}'")
+
+									# Remove the overridden collection from the root collection
+									if overridden_collection.name in [child.name for child in bpy.context.scene.collection.children]:
+										bpy.context.scene.collection.children.unlink(overridden_collection)
+										print(f"Removed overridden collection '{overridden_collection.name}' from root collection")
+
+								bpy.context.view_layer.update()
+							print(f"Linked collection '{linked_collection.name}' into '{category_name}'")
 
 			link_collection(collections)
 
