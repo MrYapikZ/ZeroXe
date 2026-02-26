@@ -112,7 +112,8 @@ class HandleBLauncher(QWidget):
         for episode in episodes:
             if episode["name"].startswith("bpath"):
                 bpaths = ShotServices.get_shots_by_episode_id(episode["id"])
-                self.paths = bpaths
+                asset_bpaths = AssetServices.get_assets_by_episode_id(episode["id"])
+                self.paths = bpaths + asset_bpaths
                 continue
             self.ui.comboBox_episode.addItem(episode["name"], episode["id"])
 
@@ -184,7 +185,7 @@ class HandleBLauncher(QWidget):
         # self.paths = []
         for asset in assets:
             if asset["name"].startswith("bpath-"):
-                self.paths.append(asset)
+                # self.paths.append(asset)
                 continue
             item = QListWidgetItem(asset["name"])
             item.setData(Qt.ItemDataRole.UserRole, asset["id"])
@@ -218,16 +219,14 @@ class HandleBLauncher(QWidget):
             })
             self.ui.listWidget_list.addItem(item)
 
-
     def load_latest_log(self, file_path: str | None = None):
         if self.selected_item is None:
             return
 
-        asset_data = self.selected_item
         master_path, full_path = self.shot_or_asset_path()
-        if full_path is not None:
+
+        if full_path and file_path is None:
             file_path = str(full_path)
-    
         file_log = VersioningSystem.get_latest_log(str(master_path), file_path)
         if file_log:
             timestamp = file_log.get("date")
@@ -369,7 +368,7 @@ class HandleBLauncher(QWidget):
                 master_item = QListWidgetItem("Master")
                 master_item.setData(Qt.ItemDataRole.UserRole, full_path)
                 self.ui.listWidget_version.addItem(master_item)
-            
+            self.selected_path = str(full_path)
         version_folder = VersioningSystem.get_version_folder(master_path)
         version_info_list = VersioningSystem.get_version_info_list(str(version_folder))
         for version_info in version_info_list:
@@ -466,10 +465,12 @@ class HandleBLauncher(QWidget):
                 init_version_path = VersioningSystem.get_init_version_path(str(file_path))
                 init_version_path.parent.mkdir(parents=True, exist_ok=True)
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+                if self.get_department_code == "anm" or self.ui.comboBox_department.currentText().lower().startswith("anim"):
+                    create_script = self.build_animation_file(file_path=str(file_path), version_path=str(init_version_path))
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
-                VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
                 file_path = init_version_path
                 VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
+                VersioningSystem.init_log(base_path=str(master_path), file_path=str(init_version_path), locked=False, timestamp=time.time(), author=self.user_id)
             else:
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}')"
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
@@ -546,15 +547,7 @@ class HandleBLauncher(QWidget):
         project = next((p for p in self.projects if p["id"] == selected_project_id), None)
         project_code = project.get("code") if project else None
 
-        department_code = None
-        if self.ui.comboBox_entity.currentIndex() == 2:
-            selected_department = self.ui.comboBox_department.currentText().lower()
-            department = next(
-                (d for d in self.paths if d["name"].lower().endswith(selected_department)), 
-                None
-            )
-            if department:
-                department_code = department.get("data", {}).get("code")
+        department_code = self.get_department_code()
         
         episode_name = self.ui.comboBox_episode.currentText()
 
@@ -581,6 +574,17 @@ class HandleBLauncher(QWidget):
         )
         return str(file_path), str(file_path / f"{file_name}.blend")
 
+    def get_department_code(self):
+        selected_department = self.ui.comboBox_department.currentText().lower()
+        department = next(
+            (d for d in self.paths if d["name"].lower().endswith(selected_department)), 
+            None
+        )
+        if department:
+            department_code = department.get("data", {}).get("code")
+                
+        return department_code if department_code else ""
+
     def get_user_id(self):
         if AppState().user_data is None:
             QMessageBox.warning(self, "Warning", "User data not found. Please log in again.")
@@ -590,20 +594,70 @@ class HandleBLauncher(QWidget):
         user_id = user_dict.get("id", "")
         self.user_id = user_id
         
-    def shot_or_asset_path(self):
+    def shot_or_asset_path(self, select: int = 0):
         asset_data = self.selected_item
         if asset_data is None:
             QMessageBox.warning(self, "Warning", "Please select an item.")
             return ""
         
-        file_path = ""
-        if self.ui.comboBox_entity.currentIndex() == 1:
+        if self.ui.comboBox_entity.currentIndex() == 1 or select == 1:
             base_path = [i for i in self.paths if i["entity_type_id"] == asset_data["asset_type_id"]]
             master_path = Path(f"{base_path[0].get('description', '')}/{asset_data['name']}")
-        elif self.ui.comboBox_entity.currentIndex() == 2:
+            file_path = master_path / f"{asset_data['name']}.blend"
+        elif self.ui.comboBox_entity.currentIndex() == 2 or select == 2:
             master_path, file_path = self.build_shot_path()
             
         return str(master_path), str(file_path)
+    
+    def build_animation_file(self, file_path: str, version_path: str):
+        selected_item = self.ui.listWidget_list.currentItem()
+        if selected_item is None:
+            return ""
+        item_data = selected_item.data(Qt.ItemDataRole.UserRole)
+        shot_data = [i for i in self.shots if i["id"] == item_data.get("shot_id")]
+        if shot_data is None or len(shot_data) == 0:
+            return ""
+        
+        char = [c.strip() for c in shot_data[0].get("data", {}).get("char", "").split(",") if c.strip()] if shot_data else []
+        set = [s.strip() for s in shot_data[0].get("data", {}).get("set", "").split(",") if s.strip()] if shot_data else []
+        prop = [p.strip() for p in shot_data[0].get("data", {}).get("prop", "").split(",") if p.strip()] if shot_data else []
+        vehicle = [v.strip() for v in shot_data[0].get("data", {}).get("vehicle", "").split(",") if v.strip()] if shot_data else []
+
+        project_id = self.ui.comboBox_project.currentData()
+        assets = AssetServices.get_assets_by_project_id(project_id)
+        
+        char_assets = [a for a in assets if a["name"] in char]
+        set_assets = [a for a in assets if a["name"] in set]
+        prop_assets = [a for a in assets if a["name"] in prop]
+        vehicle_assets = [a for a in assets if a["name"] in vehicle]
+        
+        collections = {}
+        not_found_assets = []
+        for i in char_assets + set_assets + prop_assets + vehicle_assets:
+            base_path = [j for j in self.paths if j["entity_type_id"] == i["entity_type_id"]]
+            master_path = Path(f"{base_path[0].get('description', '')}/{i['name']}")
+            asset_file_path = master_path / f"{i['name']}.blend"
+            if not asset_file_path.exists():
+                not_found_assets.append(i["name"])
+                continue
+            base_name = base_path[0].get("name", "Unknown").replace("bpath-", "").upper()
+            collections[base_name] = collections.get(base_name, []) + [str(asset_file_path)]
+
+        if not_found_assets:
+            reply = QMessageBox.question(
+                self,
+                "Missing Assets",
+                "The following assets were not found and will be skipped:\n\n"
+                + "\n".join(not_found_assets)
+                + "\n\nDo you want to continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel
+            )
+
+            if reply == QMessageBox.StandardButton.Cancel:
+                return
+        create_script = BlenderFunctions.build_animation_script(filepath=file_path, version_path=version_path, collections=collections)
+        return create_script
 
     def wire_search_list(self):
         le = self.ui.lineEdit_list
