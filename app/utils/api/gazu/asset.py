@@ -6,6 +6,10 @@ class AssetServices:
         return gazu_client.asset.all_assets_for_project(project_id)
 
     @staticmethod
+    def get_assets_by_episode_id(episode_id):
+        return gazu_client.asset.all_assets_for_episode(episode_id)
+
+    @staticmethod
     def get_asset_by_id(asset_id):
         return gazu_client.asset.get_asset(asset_id)
 
