@@ -110,10 +110,11 @@ class HandleBLauncher(QWidget):
         self.ui.comboBox_episode.clear()
         self.ui.comboBox_episode.addItem("--- Select Episode ---", None)
         for episode in episodes:
-            if episode["name"].startswith("bpath"):
+            if episode["name"].startswith("setting"):
                 bpaths = ShotServices.get_shots_by_episode_id(episode["id"])
                 asset_bpaths = AssetServices.get_assets_by_episode_id(episode["id"])
                 self.paths = bpaths + asset_bpaths
+                print(self.paths)
                 continue
             self.ui.comboBox_episode.addItem(episode["name"], episode["id"])
 
@@ -182,10 +183,8 @@ class HandleBLauncher(QWidget):
             self.ui.comboBox_type.addItem(asset_type["name"], asset_type["id"])
         
         self.assets = []
-        # self.paths = []
         for asset in assets:
             if asset["name"].startswith("bpath-"):
-                # self.paths.append(asset)
                 continue
             item = QListWidgetItem(asset["name"])
             item.setData(Qt.ItemDataRole.UserRole, asset["id"])
@@ -465,8 +464,8 @@ class HandleBLauncher(QWidget):
                 init_version_path = VersioningSystem.get_init_version_path(str(file_path))
                 init_version_path.parent.mkdir(parents=True, exist_ok=True)
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
-                if self.get_department_code == "anm" or self.ui.comboBox_department.currentText().lower().startswith("anim"):
-                    create_script = self.build_animation_file(file_path=str(file_path), version_path=str(init_version_path))
+                if self.get_department_code == "lay" or self.ui.comboBox_department.currentText().lower().startswith("lay"):
+                    create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
                 file_path = init_version_path
                 VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
@@ -504,9 +503,8 @@ class HandleBLauncher(QWidget):
         if version_selected is None:
             QMessageBox.warning(self, "Warning", "Please select a version to upmaster.")
             return
-        script, version_path, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole))
+        script, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole))
         SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
-        VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=self.user_id)
         VersioningSystem.update_log(base_path=str(master_path), file_path=str(master_blend_path), locked=False, timestamp=time.time(), author=self.user_id)
         self.reload_version_metadata()
         self.load_version(show_master=self.ui.radioButton_showMaster.isChecked())
@@ -559,6 +557,9 @@ class HandleBLauncher(QWidget):
         if not base_path_list:
             return "", ""
         base_description = base_path_list[0].get("description", "")
+        if not base_description:
+            QMessageBox.warning(self, "Warning", "Base path description not found for the selected department.")
+            return "", ""
         master_path = Path(base_description) / asset_data.get("name", "")
         file_path = master_path / PathBuilder.build_shot_path(
             episode_name=episode_name,
@@ -609,7 +610,7 @@ class HandleBLauncher(QWidget):
             
         return str(master_path), str(file_path)
     
-    def build_animation_file(self, file_path: str, version_path: str):
+    def build_layout_file(self, file_path: str, version_path: str):
         selected_item = self.ui.listWidget_list.currentItem()
         if selected_item is None:
             return ""
@@ -647,14 +648,16 @@ class HandleBLauncher(QWidget):
         
         collections = {}
         not_found_assets = []
+        presets = (i for i in self.paths if i["name"].lower().startswith("preset") and i["name"].lower().endswith(self.ui.comboBox_department.currentText().lower()))
+        print(presets)
         for i in char_assets + set_assets + prop_assets + vehicle_assets:
             base_path = [j for j in self.paths if j["entity_type_id"] == i["entity_type_id"]]
             master_path = Path(f"{base_path[0].get('description', '')}/{i['name']}")
             asset_file_path = master_path / f"{i['name']}.blend"
             if not asset_file_path.exists():
                 not_found_assets.append(i["name"])
-                continue
-            base_name = base_path[0].get("name", "Unknown").replace("bpath-", "").upper()
+                continue 
+            base_name = base_path[0].get("name", "Unknown").replace("bpath-", "").lower()
             collections[base_name] = collections.get(base_name, []) + [str(asset_file_path)]
 
         if not_found_assets:
@@ -670,7 +673,7 @@ class HandleBLauncher(QWidget):
 
             if reply == QMessageBox.StandardButton.Cancel:
                 return
-        create_script = BlenderFunctions.build_animation_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
+        create_script = BlenderFunctions.build_layout_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
         print(create_script)
         return create_script
 

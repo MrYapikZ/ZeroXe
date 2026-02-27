@@ -31,23 +31,19 @@ class BlenderFunctions:
 			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
 
 			bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=True)
-			bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=True)
 
 			bpy.ops.wm.quit_blender()
 		"""))
-
-		version_path = VersioningSystem.get_next_version_path(filepath)
 		master_path = VersioningSystem.get_master_path(filepath)
 
 		script = tpl.substitute(
             FILEPATH=filepath,
-            VERSION_PATH=version_path,
 			MASTER_PATH=master_path
 		)
-		return script, version_path, master_path
+		return script, master_path
 
 	@staticmethod
-	def build_animation_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
+	def build_layout_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
 		tpl = Template(dedent("""
 import bpy
 from pathlib import Path
@@ -132,6 +128,40 @@ def link_collection(collections_dict):
 				print(f"Linked collection '{linked_collection.name}' into '{category_name}'")
 
 link_collection(collections)
+
+def add_camera_rig():
+	# Create new collection named "cam"
+	cam_collection = bpy.data.collections.new("cam")
+	bpy.context.scene.collection.children.link(cam_collection)
+
+	# Deselect all objects
+	bpy.ops.object.select_all(action='DESELECT')
+
+	# Build camera rig (Dolly type)
+	bpy.ops.object.build_camera_rig(mode='DOLLY')
+ 
+	# Function to get object + all children recursively
+	def get_children_recursive(obj):
+		objs = [obj]
+		for child in obj.children:
+			objs.extend(get_children_recursive(child))
+		return objs
+
+	# Collect all selected objects and their children
+	objects_to_move = []
+	for obj in bpy.context.selected_objects:
+		objects_to_move.extend(get_children_recursive(obj))
+
+	# Remove duplicates (in case of shared hierarchy)
+	objects_to_move = list(set(objects_to_move))
+
+	# Move to cam collection
+	for obj in objects_to_move:
+		for col in obj.users_collection:
+			col.objects.unlink(obj)
+		cam_collection.objects.link(obj)
+
+add_camera_rig()
 
 settings = $SETTINGS
 bpy.context.scene.frame_end = settings["frame_out"]
