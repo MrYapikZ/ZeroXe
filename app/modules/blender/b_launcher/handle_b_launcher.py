@@ -522,6 +522,7 @@ class HandleBLauncher(QWidget):
         VersioningSystem.update_log(base_path=str(master_path), file_path=str(master_blend_path), locked=False, timestamp=time.time(), author=self.user_id)
         self.reload_version_metadata()
         self.load_version(show_master=self.ui.radioButton_showMaster.isChecked())
+        QMessageBox.information(self, "Info", "Successfully up master.")
 
     def on_up_version(self):
         blender_program = self.ui.lineEdit_blenderPath.text().strip()
@@ -539,6 +540,7 @@ class HandleBLauncher(QWidget):
         VersioningSystem.init_log(base_path=str(master_path), file_path=str(version_path), locked=False, timestamp=time.time(), author=self.user_id)
         self.reload_version_metadata()
         self.load_version(show_master=self.ui.radioButton_showMaster.isChecked())
+        QMessageBox.information(self, "Info", "Successfully up version.")
 
     def on_unlock_file(self):
         master_path, _ = self.shot_or_asset_path()
@@ -546,6 +548,9 @@ class HandleBLauncher(QWidget):
         logs = self.load_latest_log(str(file_path))
         if logs and logs.get("locked", False):
             VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
+            QMessageBox.information(self, "Info", "Successfully unlock file.")
+        else:
+            QMessageBox.warning(self, "Warning", "Please select a version to unlock.")
         self.reload_version_metadata()
 
     def build_shot_path(self, custom_department: str | None = None):
