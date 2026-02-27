@@ -30,7 +30,7 @@ class Ui_Form(object):
 "}\n"
 "\n"
 "#gridWidget_blenderPath .QLineEdit {\n"
-"border: none;\n"
+"border: 1px solid black;\n"
 "border-radius: 5%;\n"
 "}\n"
 "\n"
@@ -153,7 +153,7 @@ class Ui_Form(object):
         self.gridWidget_metadata = QtWidgets.QWidget(parent=Form)
         self.gridWidget_metadata.setStyleSheet(".QTableView {\n"
 "border-radius: 5%;\n"
-"border:none;\n"
+"border: 1px solid black;\n"
 "}")
         self.gridWidget_metadata.setObjectName("gridWidget_metadata")
         self.gridLayout_metadata = QtWidgets.QGridLayout(self.gridWidget_metadata)
@@ -174,12 +174,12 @@ class Ui_Form(object):
         self.verticalWidget_list = QtWidgets.QWidget(parent=Form)
         self.verticalWidget_list.setStyleSheet(".QListWidget {\n"
 "border-radius: 5%;\n"
-"border:none;\n"
+"border: 1px solid black;\n"
 "}\n"
 "\n"
 ".QLineEdit {\n"
-"border: none;\n"
 "border-radius: 5%;\n"
+"border: 1px solid black;\n"
 "}\n"
 "")
         self.verticalWidget_list.setObjectName("verticalWidget_list")
@@ -193,10 +193,11 @@ class Ui_Form(object):
         self.verticalLayout_list.addWidget(self.listWidget_list)
         self.gridLayout_main.addWidget(self.verticalWidget_list, 0, 0, 2, 1)
         self.verticalWidget_version = QtWidgets.QWidget(parent=Form)
-        self.verticalWidget_version.setStyleSheet(".QListView {\n"
+        self.verticalWidget_version.setStyleSheet(".QListWidget {\n"
 "border-radius: 5%;\n"
-"border:none;\n"
-"}")
+"border: 1px solid black;\n"
+"}\n"
+"")
         self.verticalWidget_version.setObjectName("verticalWidget_version")
         self.verticalLayout_version = QtWidgets.QVBoxLayout(self.verticalWidget_version)
         self.verticalLayout_version.setObjectName("verticalLayout_version")
