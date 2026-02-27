@@ -463,9 +463,13 @@ class HandleBLauncher(QWidget):
             if version_value in [None, "", "Master"]:
                 init_version_path = VersioningSystem.get_init_version_path(str(file_path))
                 init_version_path.parent.mkdir(parents=True, exist_ok=True)
+                target_master_path, target_file_path, target = self.get_target_department_path(str(file_path))
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
-                if self.get_department_code == "lay" or self.ui.comboBox_department.currentText().lower().startswith("lay"):
+                if target == "init":
                     create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
+                elif target != "init" and target_master_path and target_file_path:
+                    create_script = f"import bpy; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+                    print("PATH", file_path)
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
                 file_path = init_version_path
                 VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
@@ -534,7 +538,7 @@ class HandleBLauncher(QWidget):
             VersioningSystem.update_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
         self.reload_version_metadata()
 
-    def build_shot_path(self):
+    def build_shot_path(self, custom_department: str | None = None):
         selected = self.ui.listWidget_list.currentItem()
         if selected is None:
             return "", ""
@@ -545,14 +549,14 @@ class HandleBLauncher(QWidget):
         project = next((p for p in self.projects if p["id"] == selected_project_id), None)
         project_code = project.get("code") if project else None
 
-        department_code = self.get_department_code()
+        department_code = self.get_department_code(custom_department)
         
         episode_name = self.ui.comboBox_episode.currentText()
 
         asset_data = item_data
         base_path_list = [
             i for i in self.paths 
-            if i["name"].lower().endswith(self.ui.comboBox_department.currentText().lower())
+            if i["name"].lower().endswith(custom_department or self.ui.comboBox_department.currentText().lower())
         ]
         if not base_path_list:
             return "", ""
@@ -575,8 +579,8 @@ class HandleBLauncher(QWidget):
         )
         return str(file_path), str(file_path / f"{file_name}.blend")
 
-    def get_department_code(self):
-        selected_department = self.ui.comboBox_department.currentText().lower()
+    def get_department_code(self, custom_department: str | None = None):
+        selected_department = custom_department or self.ui.comboBox_department.currentText().lower()
         department = next(
             (d for d in self.paths if d["name"].lower().endswith(selected_department)), 
             None
@@ -586,6 +590,32 @@ class HandleBLauncher(QWidget):
             department_code = department.get("data", {}).get("code")
                 
         return department_code
+
+    def get_department_by_code(self, code: str | None = None):
+        if not code:
+            return None
+
+        department = next(
+            (d for d in self.paths if d.get("data", {}).get("code") == code),
+            None
+        )
+
+        return department.get("name") if department else None
+
+    def get_target_department_path(self, file_path: str):
+        file_path = Path(file_path)
+        stem = file_path.stem
+        code = stem.split("_")[-1]
+        department = next(
+            (d for d in self.paths if d.get("data", {}).get("code") == code),
+            None
+        )
+        target_code = department.get("data", {}).get("tcode") if department else ""
+        if target_code == "init":
+            return "", "", target_code
+        target_department = self.get_department_by_code(target_code)
+        master_path, file_path = self.build_shot_path(target_department)
+        return master_path, file_path, target_code
 
     def get_user_id(self):
         if AppState().user_data is None:
@@ -676,7 +706,6 @@ class HandleBLauncher(QWidget):
             if reply == QMessageBox.StandardButton.Cancel:
                 return ""
         create_script = BlenderFunctions.build_layout_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
-        print(create_script)
         return create_script
 
     def wire_search_list(self):
