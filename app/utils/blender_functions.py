@@ -46,6 +46,7 @@ class BlenderFunctions:
 	def build_layout_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
 		tpl = Template(dedent("""
 import bpy
+import os
 from pathlib import Path
 
 collections = $COLLECTIONS
@@ -170,16 +171,28 @@ bpy.context.scene.render.fps = settings["fps"]
 bpy.context.scene.render.resolution_x = settings["resolution"][0]
 bpy.context.scene.render.resolution_y = settings["resolution"][1]
 
+bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH")
 bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=True)
-bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH", copy=True)
+		"""))
+		end_script = Template(dedent("""
+bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH")
 
 bpy.ops.wm.quit_blender()
 		"""))
 
 		script = tpl.substitute(
-			VERSION_PATH=version_path,
-			MASTER_PATH=filepath,
 			COLLECTIONS=collections,
-			SETTINGS=setting_data
+			SETTINGS=setting_data,
+			VERSION_PATH=version_path,
+			MASTER_PATH=filepath
 		)
+		end_script = end_script.substitute(
+			VERSION_PATH=version_path
+		)
+
+		if setting_data.get("script"):
+			with open(setting_data.get("script"), "r") as f:
+				preset_code = f.read()
+				script = script + "\n\n" + preset_code
+		script = script + end_script
 		return script
