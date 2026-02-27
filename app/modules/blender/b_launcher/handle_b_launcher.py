@@ -114,7 +114,6 @@ class HandleBLauncher(QWidget):
                 bpaths = ShotServices.get_shots_by_episode_id(episode["id"])
                 asset_bpaths = AssetServices.get_assets_by_episode_id(episode["id"])
                 self.paths = bpaths + asset_bpaths
-                print(self.paths)
                 continue
             self.ui.comboBox_episode.addItem(episode["name"], episode["id"])
 
@@ -382,6 +381,7 @@ class HandleBLauncher(QWidget):
 
         self.selected_path = version_path
 
+        custom_field_map, custom_asset_data = {}, {}
         if self.ui.comboBox_entity.currentIndex() == 1:
             custom_field_map = {
                 "name": "Name",
@@ -581,10 +581,11 @@ class HandleBLauncher(QWidget):
             (d for d in self.paths if d["name"].lower().endswith(selected_department)), 
             None
         )
+        department_code = ""
         if department:
             department_code = department.get("data", {}).get("code")
                 
-        return department_code if department_code else ""
+        return department_code
 
     def get_user_id(self):
         if AppState().user_data is None:
@@ -600,7 +601,8 @@ class HandleBLauncher(QWidget):
         if asset_data is None:
             QMessageBox.warning(self, "Warning", "Please select an item.")
             return ""
-        
+
+        master_path, file_path = "", ""
         if self.ui.comboBox_entity.currentIndex() == 1 or select == 1:
             base_path = [i for i in self.paths if i["entity_type_id"] == asset_data["asset_type_id"]]
             master_path = Path(f"{base_path[0].get('description', '')}/{asset_data['name']}")
@@ -630,13 +632,6 @@ class HandleBLauncher(QWidget):
 
         res_str = str(shot_data[0].get("data", {}).get("resolution", "1920x1080"))
         resolution = [int(res.strip()) for res in res_str.split('x')] if 'x' in res_str else []
-        
-        setting_data = {
-            "frame_in": frame_in,
-            "frame_out": frame_out,
-            "fps": fps,
-            "resolution": resolution
-        }
 
         project_id = self.ui.comboBox_project.currentData()
         assets = AssetServices.get_assets_by_project_id(project_id)
@@ -648,8 +643,7 @@ class HandleBLauncher(QWidget):
         
         collections = {}
         not_found_assets = []
-        presets = (i for i in self.paths if i["name"].lower().startswith("preset") and i["name"].lower().endswith(self.ui.comboBox_department.currentText().lower()))
-        print(presets)
+        presets = [p for p in self.paths if p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith((self.ui.comboBox_department.currentText() or "").lower())]
         for i in char_assets + set_assets + prop_assets + vehicle_assets:
             base_path = [j for j in self.paths if j["entity_type_id"] == i["entity_type_id"]]
             master_path = Path(f"{base_path[0].get('description', '')}/{i['name']}")
@@ -659,6 +653,14 @@ class HandleBLauncher(QWidget):
                 continue 
             base_name = base_path[0].get("name", "Unknown").replace("bpath-", "").lower()
             collections[base_name] = collections.get(base_name, []) + [str(asset_file_path)]
+
+        setting_data = {
+            "frame_in": frame_in,
+            "frame_out": frame_out,
+            "fps": fps,
+            "resolution": resolution,
+            "script": presets[0].get("description", "") if presets else "",
+        }
 
         if not_found_assets:
             reply = QMessageBox.question(
@@ -672,7 +674,7 @@ class HandleBLauncher(QWidget):
             )
 
             if reply == QMessageBox.StandardButton.Cancel:
-                return
+                return ""
         create_script = BlenderFunctions.build_layout_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
         print(create_script)
         return create_script
