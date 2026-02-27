@@ -468,8 +468,18 @@ class HandleBLauncher(QWidget):
                 if target == "init":
                     create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
                 elif target != "init" and target_master_path and target_file_path:
-                    create_script = f"import bpy; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
-                    print("PATH", file_path)
+                    start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}');"
+                    end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+                    presets = [p for p in self.paths if
+                               p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
+                                   (self.ui.comboBox_department.currentText() or "").lower())]
+                    preset = presets[0].get("description", "") if presets else ""
+                    if preset:
+                        with open(preset, "r") as f:
+                            preset_code = f.read()
+                            create_script = start_script + "\n\n" + preset_code + "\n\n" + end_script
+                    else:
+                        create_script = end_script + "\n\n" + end_script
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
                 file_path = init_version_path
                 VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
