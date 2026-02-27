@@ -35,7 +35,7 @@ border-radius: 5%;
 }
 
 #gridWidget_blenderPath .QLineEdit {
-border: none;
+border: 1px solid black;
 border-radius: 5%;
 }
 
@@ -257,7 +257,7 @@ QComboBox::down-arrow {
        <property name="styleSheet">
         <string notr="true">.QTableView {
 border-radius: 5%;
-border:none;
+border: 1px solid black;
 }</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_metadata">
@@ -289,12 +289,12 @@ border:none;
        <property name="styleSheet">
         <string notr="true">.QListWidget {
 border-radius: 5%;
-border:none;
+border: 1px solid black;
 }
 
 .QLineEdit {
-border: none;
 border-radius: 5%;
+border: 1px solid black;
 }
 </string>
        </property>
@@ -311,10 +311,11 @@ border-radius: 5%;
      <item row="1" column="2">
       <widget class="QWidget" name="verticalWidget_version" native="true">
        <property name="styleSheet">
-        <string notr="true">.QListView {
+        <string notr="true">.QListWidget {
 border-radius: 5%;
-border:none;
-}</string>
+border: 1px solid black;
+}
+</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_version">
         <item>
