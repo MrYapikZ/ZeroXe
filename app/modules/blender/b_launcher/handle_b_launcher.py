@@ -210,9 +210,9 @@ class HandleBLauncher(QWidget):
 
             item = QListWidgetItem(item_name)
             item.setData(Qt.ItemDataRole.UserRole, {
-                "seq_id": shot["parent_id"],
+                "sequence_id": shot["parent_id"],
                 "shot_id": shot["id"],
-                "seq_name": seq_name,
+                "sequence_name": seq_name,
                 "shot_name": shot_name
             })
             self.ui.listWidget_list.addItem(item)
@@ -450,7 +450,6 @@ class HandleBLauncher(QWidget):
             return
         
         master_path, _ = self.shot_or_asset_path()
-            
         file_path.parent.mkdir(parents=True, exist_ok=True)
         if not file_path.exists():
             model = self.ui.tableView_metadata.model()
@@ -464,9 +463,12 @@ class HandleBLauncher(QWidget):
                 init_version_path = VersioningSystem.get_init_version_path(str(file_path))
                 init_version_path.parent.mkdir(parents=True, exist_ok=True)
                 target_master_path, target_file_path, target = self.get_target_department_path(str(file_path))
+                department_code = self.get_department_code()
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
                 if target == "init":
                     create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
+                elif target == "anm" and department_code == "lgt":
+                    create_script = self.build_lighting_file(file_path=str(file_path), version_path=str(init_version_path))
                 elif target != "init" and target_master_path and target_file_path:
                     start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}');"
                     end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
@@ -582,13 +584,13 @@ class HandleBLauncher(QWidget):
         master_path = Path(base_description) / asset_data.get("name", "")
         file_path = master_path / PathBuilder.build_shot_path(
             episode_name=episode_name,
-            sequence_name=item_data.get("seq_name", ""),
+            sequence_name=item_data.get("sequence_name", ""),
             shot_name=item_data.get("shot_name", "")
         )
         file_name = PathBuilder.build_shot_name(
             project_code=str(project_code) if project_code else "",
             episode_name=episode_name,
-            sequence_name=item_data.get("seq_name", ""),
+            sequence_name=item_data.get("sequence_name", ""),
             shot_name=item_data.get("shot_name", ""),
             department_code=department_code
         )
@@ -622,7 +624,7 @@ class HandleBLauncher(QWidget):
         stem = file_path.stem
         code = stem.split("_")[-1]
         department = next(
-            (d for d in self.paths if d.get("data", {}).get("code") == code),
+            (d for d in self.paths if d["data"].get("code", None) == code),
             None
         )
         target_code = department.get("data", {}).get("tcode") if department else ""
@@ -654,7 +656,6 @@ class HandleBLauncher(QWidget):
             file_path = master_path / f"{asset_data['name']}.blend"
         elif self.ui.comboBox_entity.currentIndex() == 2 or select == 2:
             master_path, file_path = self.build_shot_path()
-            
         return str(master_path), str(file_path)
     
     def build_layout_file(self, file_path: str, version_path: str):
@@ -721,6 +722,56 @@ class HandleBLauncher(QWidget):
             if reply == QMessageBox.StandardButton.Cancel:
                 return ""
         create_script = BlenderFunctions.build_layout_script(filepath=file_path, version_path=version_path, collections=collections, setting_data=setting_data)
+        return create_script
+
+    def build_lighting_file(self, file_path: str, version_path: str):
+        selected_item = self.ui.listWidget_list.currentItem()
+        if selected_item is None:
+            return ""
+        item_data = selected_item.data(Qt.ItemDataRole.UserRole)
+        shot_data = [i for i in self.shots if i["id"] == item_data.get("shot_id")]
+        if shot_data is None or len(shot_data) == 0:
+            return ""
+
+        anim_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("animation")]
+        lighting_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("lighting")]
+        ms_lit_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("lit")]
+        if not anim_base_path or not lighting_base_path or not ms_lit_base_path:
+            QMessageBox.warning(self, "Warning", "Animation or Lighting or LIT base path not found for the selected department.")
+            return ""
+        lit_name = shot_data[0]["data"].get("ms_lit", "")
+        if not lit_name:
+            QMessageBox.warning(self, "Warning", "LIT name not found in shot data.")
+            return ""
+        print(f"MS LIT Base Path: {ms_lit_base_path}")
+        print(f"MS LIT Name: {lit_name}")
+        lit_path = Path(ms_lit_base_path[0]) / lit_name / f"{lit_name}.blend"
+        if not lit_path.exists():
+            QMessageBox.warning(self, "Warning", f"LIT file not found: {lit_path}")
+            return ""
+        anim_department = [c.get("name", "") for c in self.paths if c.get("name", "").lower().startswith("bpath-") and c.get("name", "").lower().endswith("animation")]
+        _, anim_path = self.build_shot_path(str(anim_department[0]))
+
+        presets = [p for p in self.paths if
+                   p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
+                       (self.ui.comboBox_department.currentText() or "").lower())]
+        frame_in = int(shot_data[0].get("data", {}).get("frame_in", "0"))
+        frame_out = int(shot_data[0].get("data", {}).get("frame_out", "0"))
+        fps = int(shot_data[0].get("data", {}).get("fps", "24"))
+
+        res_str = str(shot_data[0].get("data", {}).get("resolution", "1920x1080"))
+        resolution = [int(res.strip()) for res in res_str.split('x')] if 'x' in res_str else []
+
+        setting_data = {
+            "frame_in": frame_in,
+            "frame_out": frame_out,
+            "fps": fps,
+            "resolution": resolution,
+            "script": presets[0].get("description", "") if presets else "",
+        }
+
+        create_script = BlenderFunctions.build_lighting_script(filepath=str(file_path), version_path=str(version_path), animation_file=str(anim_path), master_file=str(lit_path), setting_data=setting_data)
+        print(create_script)
         return create_script
 
     def wire_search_list(self):
