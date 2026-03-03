@@ -452,12 +452,6 @@ from pathlib import Path
 
 bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
 
-settings = $SETTINGS
-bpy.context.scene.frame_end = settings["frame_out"]
-bpy.context.scene.frame_start = settings["frame_in"]
-bpy.context.scene.render.fps = settings["fps"]
-bpy.context.scene.render.resolution_x = settings["resolution"][0]
-bpy.context.scene.render.resolution_y = settings["resolution"][1]
 bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH")
 """))
         end_script = Template(dedent("""
@@ -473,7 +467,6 @@ bpy.ops.wm.quit_blender()
         script = tpl.substitute(
             FILEPATH=master_file,
             OUTPUT_PATH=filepath,
-            SETTINGS=setting_data
         )
         end_script = end_script.substitute(
             OUTPUT_PATH=filepath,
@@ -483,6 +476,7 @@ bpy.ops.wm.quit_blender()
         if setting_data.get("script"):
             with open(setting_data.get("script"), "r") as f:
                 preset_code = f.read()
+                preset_code = preset_code.replace("$TOTAL_FRAME", str(setting_data["frame_out"] - setting_data["frame_in"] + 1))
                 script = script + "\n\n" + preset_code + "\n\n"
         script = script + end_script
         return script

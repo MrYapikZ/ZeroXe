@@ -747,7 +747,7 @@ class HandleBLauncher(QWidget):
 
         anim_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("animation")]
         lighting_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("lighting")]
-        ms_lit_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("lit")]
+        ms_lit_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("ms_lit")]
         if not anim_base_path or not lighting_base_path or not ms_lit_base_path:
             QMessageBox.warning(self, "Warning", "Animation or Lighting or LIT base path not found for the selected department.")
             return ""
@@ -797,7 +797,7 @@ class HandleBLauncher(QWidget):
                                   "compositing")]
         ms_comp_base_path = [p.get("description", "") for p in self.paths if
                             p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith(
-                                "comp")]
+                                "ms_comp")]
         if not comp_base_path or not ms_comp_base_path:
             QMessageBox.warning(self, "Warning",
                                 "Compositing or Compositing Master Shot base path not found for the selected department.")
@@ -830,7 +830,6 @@ class HandleBLauncher(QWidget):
         }
 
         create_script = BlenderFunctions.build_comp_script(filepath=str(file_path), version_path=str(version_path), master_file=str(ms_comp_path), setting_data=setting_data)
-        print(create_script)
         return create_script
 
     def wire_search_list(self):
