@@ -7,6 +7,7 @@ from PyQt6.QtGui import QPixmap, QStandardItemModel, QStandardItem, QIcon
 from PyQt6.QtWidgets import QWidget, QTreeWidgetItem, QListWidgetItem, QPushButton, QHeaderView, QStyleOptionButton, QHBoxLayout, QAbstractItemView, QSizePolicy, QApplication, QMessageBox, QFileDialog
 from gazu import project
 
+from app.config import Settings
 from app.ui.modules.blender.b_launcher_ui import Ui_Form
 from app.core.app_states import AppState
 from app.utils.api.gazu.person import PersonServices
@@ -46,6 +47,14 @@ class HandleBLauncher(QWidget):
         self.mount_function()
         self.wire_search_list()
 
+        self.load_user_data()
+
+    def load_user_data(self):
+        user_data = Settings().read_user_data()
+        if user_data and user_data.get("blender_path", None):
+            self.ui.lineEdit_blenderPath.setText(user_data["blender_path"])
+        else:
+            self.on_select_blender()
 
     def mount_function(self):
         self.ui.comboBox_department.currentIndexChanged.connect(self.on_department_change)
@@ -168,6 +177,7 @@ class HandleBLauncher(QWidget):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Blender", "", "All Files (*)")
         if file_path:
             self.ui.lineEdit_blenderPath.setText(file_path)
+            Settings().update_user_field(key="blender_path", value=file_path)
 
     def load_assets(self):
         project_id = self.ui.comboBox_project.currentData()
