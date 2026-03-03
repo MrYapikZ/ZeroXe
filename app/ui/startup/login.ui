@@ -14,7 +14,8 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background: white;</string>
+   <string notr="true">background: white;
+color: black;</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="2">
