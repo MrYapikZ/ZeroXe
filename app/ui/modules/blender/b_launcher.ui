@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>722</width>
-    <height>612</height>
+    <width>756</width>
+    <height>727</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,10 +18,23 @@
     <layout class="QGridLayout" name="gridLayout_main">
      <item row="1" column="1">
       <layout class="QGridLayout" name="gridLayout_function">
-       <item row="2" column="0">
-        <widget class="QPushButton" name="pushButton_upMaster">
+       <item row="1" column="0" colspan="2">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="pushButton_unlock">
          <property name="text">
-          <string>UpMaster</string>
+          <string>Unlock</string>
          </property>
         </widget>
        </item>
@@ -72,7 +85,21 @@ padding: 2px;
          </layout>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
+       <item row="3" column="1">
+        <widget class="QPushButton" name="pushButton_upVersion">
+         <property name="text">
+          <string>UpVersion</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QPushButton" name="pushButton_upMaster">
+         <property name="text">
+          <string>UpMaster</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
         <widget class="QPushButton" name="pushButton_open">
          <property name="styleSheet">
           <string notr="true">.QPushButton {
@@ -88,30 +115,19 @@ padding:4px;
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="2">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
+       <item row="2" column="0" colspan="2">
+        <widget class="QPushButton" name="pushButton_replace">
+         <property name="styleSheet">
+          <string notr="true">.QPushButton {
+border: none;
+background-color:  red;
+border-radius: 5%;
+color: white;
+padding:4px;
+}</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="2" column="1">
-        <widget class="QPushButton" name="pushButton_upVersion">
          <property name="text">
-          <string>UpVersion</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QPushButton" name="pushButton_unlock">
-         <property name="text">
-          <string>Unlock</string>
+          <string>Replace</string>
          </property>
         </widget>
        </item>

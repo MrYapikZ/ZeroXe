@@ -69,6 +69,7 @@ class HandleBLauncher(QWidget):
         self.ui.pushButton_upMaster.clicked.connect(self.on_up_master)
         self.ui.pushButton_upVersion.clicked.connect(self.on_up_version)
         self.ui.pushButton_unlock.clicked.connect(self.on_unlock_file)
+        self.ui.pushButton_replace.clicked.connect(self.on_replace_file)
         self.ui.radioButton_showMaster.toggled.connect(lambda checked: self.load_version(checked))
 
     def load_departments(self):
@@ -470,34 +471,7 @@ class HandleBLauncher(QWidget):
                         version_value = str(model.index(row, 1).data()).strip()
                         break
             if version_value in [None, "", "Master"]:
-                init_version_path = VersioningSystem.get_init_version_path(str(file_path))
-                init_version_path.parent.mkdir(parents=True, exist_ok=True)
-                target_master_path, target_file_path, target = self.get_target_department_path(str(file_path))
-                department_code = self.get_department_code()
-                create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
-                if target == "init":
-                    create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
-                elif target == "anm" and department_code == "lgt":
-                    create_script = self.build_lighting_file(file_path=str(file_path), version_path=str(init_version_path))
-                elif department_code == "comp":
-                    create_script = self.build_comp_file(file_path=str(file_path), version_path=str(init_version_path))
-                elif target != "init" and target_master_path and target_file_path:
-                    start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}');"
-                    end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
-                    presets = [p for p in self.paths if
-                               p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
-                                   (self.ui.comboBox_department.currentText() or "").lower())]
-                    preset = presets[0].get("description", "") if presets else ""
-                    if preset:
-                        with open(preset, "r") as f:
-                            preset_code = f.read()
-                            create_script = start_script + "\n\n" + preset_code + "\n\n" + end_script
-                    else:
-                        create_script = end_script + "\n\n" + end_script
-                SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
-                file_path = init_version_path
-                VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False, timestamp=time.time(), author=self.user_id)
-                VersioningSystem.init_log(base_path=str(master_path), file_path=str(init_version_path), locked=False, timestamp=time.time(), author=self.user_id)
+                self.create_and_replace_file()
             else:
                 create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}')"
                 SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
@@ -566,6 +540,15 @@ class HandleBLauncher(QWidget):
         else:
             QMessageBox.warning(self, "Warning", "Please select a version to unlock.")
         self.reload_version_metadata()
+
+    def on_replace_file(self):
+        reply = QMessageBox.question(self, "Confirm Replace", "Are you sure you want to replace the master file with this version?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                self.create_and_replace_file()
+                QMessageBox.information(self, "Info", "Successfully replaced master file.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to replace master file: {str(e)}")
 
     def build_shot_path(self, custom_department: str | None = None):
         selected = self.ui.listWidget_list.currentItem()
@@ -831,6 +814,48 @@ class HandleBLauncher(QWidget):
 
         create_script = BlenderFunctions.build_comp_script(filepath=str(file_path), version_path=str(version_path), master_file=str(ms_comp_path), setting_data=setting_data)
         return create_script
+
+    def create_and_replace_file(self):
+        file_path = Path(self.selected_path)
+        if (self.load_latest_log(str(file_path)) or {}).get("locked", "").lower() == "true":
+            QMessageBox.warning(self, "Warning", "This file is locked.")
+            return
+        blender_program = self.ui.lineEdit_blenderPath.text().strip()
+        if self.selected_path is None or not blender_program:
+            QMessageBox.warning(self, "Warning", "Please select a path and blender program.")
+            return
+        master_path, _ = self.shot_or_asset_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        init_version_path = VersioningSystem.get_init_version_path(str(file_path))
+        init_version_path.parent.mkdir(parents=True, exist_ok=True)
+        target_master_path, target_file_path, target = self.get_target_department_path(str(file_path))
+        department_code = self.get_department_code()
+        create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+        if target == "init":
+            create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
+        elif target == "anm" and department_code == "lgt":
+            create_script = self.build_lighting_file(file_path=str(file_path), version_path=str(init_version_path))
+        elif department_code == "comp":
+            create_script = self.build_comp_file(file_path=str(file_path), version_path=str(init_version_path))
+        elif target != "init" and target_master_path and target_file_path:
+            start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}');"
+            end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+            presets = [p for p in self.paths if
+                       p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
+                           (self.ui.comboBox_department.currentText() or "").lower())]
+            preset = presets[0].get("description", "") if presets else ""
+            if preset:
+                with open(preset, "r") as f:
+                    preset_code = f.read()
+                    create_script = start_script + "\n\n" + preset_code + "\n\n" + end_script
+            else:
+                create_script = end_script + "\n\n" + end_script
+        SubprocessServices.run_command([blender_program, "-b", "--python-expr", create_script])
+        file_path = init_version_path
+        VersioningSystem.init_log(base_path=str(master_path), file_path=str(file_path), locked=False,
+                                  timestamp=time.time(), author=self.user_id)
+        VersioningSystem.init_log(base_path=str(master_path), file_path=str(init_version_path), locked=False,
+                                  timestamp=time.time(), author=self.user_id)
 
     def wire_search_list(self):
         le = self.ui.lineEdit_list
