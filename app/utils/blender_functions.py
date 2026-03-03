@@ -25,22 +25,34 @@ class BlenderFunctions:
         return script, version_path
 
     @staticmethod
-    def up_master(filepath: str):
-        tpl = Template(dedent("""
-			import bpy
+    def up_master(filepath: str, setting_data: dict = None):
+        start_script = Template(dedent("""
+import bpy
 
-			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
+bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
 
-			bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=True)
-
-			bpy.ops.wm.quit_blender()
+bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH")
 		"""))
+        end_script = Template(dedent("""
+bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH")
+
+bpy.ops.wm.quit_blender()
+        """))
         master_path = VersioningSystem.get_master_path(filepath)
 
-        script = tpl.substitute(
+        script = start_script.substitute(
             FILEPATH=filepath,
             MASTER_PATH=master_path
         )
+        end_script = end_script.substitute(
+            MASTER_PATH=master_path
+        )
+        if setting_data and setting_data.get("script"):
+            with open(setting_data.get("script"), "r") as f:
+                preset_code = f.read()
+                preset_code = preset_code.replace("$TOTAL_FRAME", str(setting_data["frame_out"] - setting_data["frame_in"] + 1))
+                script = script + "\n\n" + preset_code
+        script = script + "\n\n" + end_script
         return script, master_path
 
     @staticmethod
