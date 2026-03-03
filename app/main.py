@@ -23,13 +23,17 @@ class MainUI(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle(f"{Settings.APP_NAME} - {Settings.BUILD_VERSION}")
 
-        if self.prelaunch():
+        if self.load_saved_login():
             self.load_ui()
-            self.show()
         else:
-            self.close()
+            if self.prelaunch():
+                self.load_ui()
+                self.show()
+            else:
+                self.close()
 
-    def prelaunch(self):
+    @staticmethod
+    def prelaunch():
         # Show login window first
         login_handler = LoginHandler()
 
@@ -70,6 +74,28 @@ class MainUI(QMainWindow):
             self.ui.label_userimage.setScaledContents(True)
         else:
             print(f"[-] Failed to load avatar image from: {file_path}")
+
+    @staticmethod
+    def load_saved_login():
+        login_data = Settings().read_user_data()
+        if login_data:
+            print("[*] Found saved login data, attempting auto-login...")
+            try:
+                response = AuthServices.authenticate_user(login_data["email"], login_data["password"])
+                if response.get('success'):
+                    # Set user data in AppState
+                    user_data = response.get("user", {})
+                    AppState().set_access_token(user_data.get("access_token"))
+                    AppState().set_user_data(user_data)
+                    print("[+] Auto-login successful")
+                    return True
+                else:
+                    print(f"[-] Auto-login failed: {response.get('message', 'Unknown error')}")
+            except Exception as e:
+                print(f"[-] Auto-login failed: {e}")
+        else:
+            print("[*] No saved login data found.")
+        return False
 
 if __name__== "__main__":
     app = QApplication(sys.argv)
