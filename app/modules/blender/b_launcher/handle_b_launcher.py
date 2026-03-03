@@ -469,6 +469,8 @@ class HandleBLauncher(QWidget):
                     create_script = self.build_layout_file(file_path=str(file_path), version_path=str(init_version_path))
                 elif target == "anm" and department_code == "lgt":
                     create_script = self.build_lighting_file(file_path=str(file_path), version_path=str(init_version_path))
+                elif department_code == "comp":
+                    create_script = self.build_comp_file(file_path=str(file_path), version_path=str(init_version_path))
                 elif target != "init" and target_master_path and target_file_path:
                     start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{target_file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}');"
                     end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
@@ -743,8 +745,6 @@ class HandleBLauncher(QWidget):
         if not lit_name:
             QMessageBox.warning(self, "Warning", "LIT name not found in shot data.")
             return ""
-        print(f"MS LIT Base Path: {ms_lit_base_path}")
-        print(f"MS LIT Name: {lit_name}")
         lit_path = Path(ms_lit_base_path[0]) / lit_name / f"{lit_name}.blend"
         if not lit_path.exists():
             QMessageBox.warning(self, "Warning", f"LIT file not found: {lit_path}")
@@ -771,6 +771,55 @@ class HandleBLauncher(QWidget):
         }
 
         create_script = BlenderFunctions.build_lighting_script(filepath=str(file_path), version_path=str(version_path), animation_file=str(anim_path), master_file=str(lit_path), setting_data=setting_data)
+        return create_script
+
+    def build_comp_file(self, file_path: str, version_path: str):
+        selected_item = self.ui.listWidget_list.currentItem()
+        if selected_item is None:
+            return ""
+        item_data = selected_item.data(Qt.ItemDataRole.UserRole)
+        shot_data = [i for i in self.shots if i["id"] == item_data.get("shot_id")]
+        if shot_data is None or len(shot_data) == 0:
+            return ""
+
+        comp_base_path = [p.get("description", "") for p in self.paths if
+                              p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith(
+                                  "compositing")]
+        ms_comp_base_path = [p.get("description", "") for p in self.paths if
+                            p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith(
+                                "comp")]
+        if not comp_base_path or not ms_comp_base_path:
+            QMessageBox.warning(self, "Warning",
+                                "Compositing or Compositing Master Shot base path not found for the selected department.")
+            return ""
+        ms_comp_name = shot_data[0]["data"].get("ms_comp", "")
+        if not ms_comp_name:
+            QMessageBox.warning(self, "Warning", "Compositing Master Shot name not found in shot data.")
+            return ""
+        ms_comp_path = Path(ms_comp_base_path[0]) / ms_comp_name / f"{ms_comp_name}.blend"
+        if not ms_comp_path.exists():
+            QMessageBox.warning(self, "Warning", f"Compositing Master Shot file not found: {ms_comp_path}")
+            return ""
+
+        presets = [p for p in self.paths if
+                   p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
+                       (self.ui.comboBox_department.currentText() or "").lower())]
+        frame_in = int(shot_data[0].get("data", {}).get("frame_in", "0"))
+        frame_out = int(shot_data[0].get("data", {}).get("frame_out", "0"))
+        fps = int(shot_data[0].get("data", {}).get("fps", "24"))
+
+        res_str = str(shot_data[0].get("data", {}).get("resolution", "1920x1080"))
+        resolution = [int(res.strip()) for res in res_str.split('x')] if 'x' in res_str else []
+
+        setting_data = {
+            "frame_in": frame_in,
+            "frame_out": frame_out,
+            "fps": fps,
+            "resolution": resolution,
+            "script": presets[0].get("description", "") if presets else "",
+        }
+
+        create_script = BlenderFunctions.build_comp_script(filepath=str(file_path), version_path=str(version_path), master_file=str(ms_comp_path), setting_data=setting_data)
         print(create_script)
         return create_script
 

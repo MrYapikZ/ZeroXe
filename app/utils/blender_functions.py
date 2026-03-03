@@ -2,10 +2,11 @@ from textwrap import dedent
 from string import Template
 from app.utils.versioning import VersioningSystem
 
+
 class BlenderFunctions:
-	@staticmethod
-	def up_version(filepath: str):
-		tpl = Template(dedent("""
+    @staticmethod
+    def up_version(filepath: str):
+        tpl = Template(dedent("""
 			import bpy
 
 			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
@@ -15,17 +16,17 @@ class BlenderFunctions:
 			bpy.ops.wm.quit_blender()
 			"""))
 
-		version_path = VersioningSystem.get_next_version_path(filepath)
+        version_path = VersioningSystem.get_next_version_path(filepath)
 
-		script = tpl.substitute(
+        script = tpl.substitute(
             FILEPATH=filepath,
             VERSION_PATH=version_path
-		)
-		return script, version_path
+        )
+        return script, version_path
 
-	@staticmethod
-	def up_master(filepath: str):
-		tpl = Template(dedent("""
+    @staticmethod
+    def up_master(filepath: str):
+        tpl = Template(dedent("""
 			import bpy
 
 			bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
@@ -34,17 +35,17 @@ class BlenderFunctions:
 
 			bpy.ops.wm.quit_blender()
 		"""))
-		master_path = VersioningSystem.get_master_path(filepath)
+        master_path = VersioningSystem.get_master_path(filepath)
 
-		script = tpl.substitute(
+        script = tpl.substitute(
             FILEPATH=filepath,
-			MASTER_PATH=master_path
-		)
-		return script, master_path
+            MASTER_PATH=master_path
+        )
+        return script, master_path
 
-	@staticmethod
-	def build_layout_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
-		tpl = Template(dedent("""
+    @staticmethod
+    def build_layout_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
+        tpl = Template(dedent("""
 import bpy
 import os
 from pathlib import Path
@@ -174,32 +175,33 @@ bpy.context.scene.render.resolution_y = settings["resolution"][1]
 bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH")
 bpy.ops.wm.save_as_mainfile(filepath="$MASTER_PATH", copy=True)
 		"""))
-		end_script = Template(dedent("""
+        end_script = Template(dedent("""
 bpy.ops.wm.save_as_mainfile(filepath="$VERSION_PATH")
 
 bpy.ops.wm.quit_blender()
 		"""))
 
-		script = tpl.substitute(
-			COLLECTIONS=collections,
-			SETTINGS=setting_data,
-			VERSION_PATH=version_path,
-			MASTER_PATH=filepath
-		)
-		end_script = end_script.substitute(
-			VERSION_PATH=version_path
-		)
+        script = tpl.substitute(
+            COLLECTIONS=collections,
+            SETTINGS=setting_data,
+            VERSION_PATH=version_path,
+            MASTER_PATH=filepath
+        )
+        end_script = end_script.substitute(
+            VERSION_PATH=version_path
+        )
 
-		if setting_data.get("script"):
-			with open(setting_data.get("script"), "r") as f:
-				preset_code = f.read()
-				script = script + "\n\n" + preset_code
-		script = script + end_script
-		return script
+        if setting_data.get("script"):
+            with open(setting_data.get("script"), "r") as f:
+                preset_code = f.read()
+                script = script + "\n\n" + preset_code + "\n\n"
+        script = script + end_script
+        return script
 
-	@staticmethod
-	def build_lighting_script(filepath: str, version_path: str, master_file: str, animation_file : str, setting_data: dict):
-		tpl = Template(dedent("""
+    @staticmethod
+    def build_lighting_script(filepath: str, version_path: str, master_file: str, animation_file: str,
+                              setting_data: dict):
+        tpl = Template(dedent("""
 import bpy
 from pathlib import Path
 							  
@@ -405,7 +407,7 @@ bpy.context.scene.render.resolution_y = settings["resolution"][1]
 bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH")
 """))
 
-		end_script = Template(dedent("""
+        end_script = Template(dedent("""
 # Save the modified Blender file
 bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH")
 bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH_PROGRESS")
@@ -414,30 +416,73 @@ print("File saved as: $OUTPUT_PATH")
 # Quit Blender
 bpy.ops.wm.quit_blender()
 		"""))
-		collection_list = [
-			("chr", "c-"),
-			("prp", "p-"),
-			("set", "s-"),
-			("veh", "v-"),
-			("cam", None),
-		]
-		script = tpl.substitute(
-			FILEPATH=master_file,
-			ANIMATION_FILE=animation_file,
-			COLLECTION_LIST=collection_list,
-			CAMERA_COLLECTION="cam",
-			METHOD=False,
-			OUTPUT_PATH=filepath,
-			SETTINGS=setting_data
-		)
-		end_script = end_script.substitute(
-			OUTPUT_PATH=filepath,
-			OUTPUT_PATH_PROGRESS=version_path
-		)
+        collection_list = [
+            ("chr", "c-"),
+            ("prp", "p-"),
+            ("set", "s-"),
+            ("veh", "v-"),
+            ("cam", None),
+        ]
+        script = tpl.substitute(
+            FILEPATH=master_file,
+            ANIMATION_FILE=animation_file,
+            COLLECTION_LIST=collection_list,
+            CAMERA_COLLECTION="cam",
+            METHOD=False,
+            OUTPUT_PATH=filepath,
+            SETTINGS=setting_data
+        )
+        end_script = end_script.substitute(
+            OUTPUT_PATH=filepath,
+            OUTPUT_PATH_PROGRESS=version_path
+        )
 
-		if setting_data.get("script"):
-			with open(setting_data.get("script"), "r") as f:
-				preset_code = f.read()
-				script = script + "\n\n" + preset_code
-		script = script + end_script
-		return script
+        if setting_data.get("script"):
+            with open(setting_data.get("script"), "r") as f:
+                preset_code = f.read()
+                script = script + "\n\n" + preset_code + "\n\n"
+        script = script + end_script
+        return script
+
+    @staticmethod
+    def build_comp_script(filepath: str, version_path: str, master_file: str, setting_data: dict):
+        tpl = Template(dedent("""
+import bpy
+from pathlib import Path
+
+bpy.ops.wm.open_mainfile(filepath="$FILEPATH")
+
+settings = $SETTINGS
+bpy.context.scene.frame_end = settings["frame_out"]
+bpy.context.scene.frame_start = settings["frame_in"]
+bpy.context.scene.render.fps = settings["fps"]
+bpy.context.scene.render.resolution_x = settings["resolution"][0]
+bpy.context.scene.render.resolution_y = settings["resolution"][1]
+bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH")
+"""))
+        end_script = Template(dedent("""
+# Save the modified Blender file
+bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH")
+bpy.ops.wm.save_as_mainfile(filepath="$OUTPUT_PATH_PROGRESS")
+print("File saved as: $OUTPUT_PATH")
+
+# Quit Blender
+bpy.ops.wm.quit_blender()
+"""))
+
+        script = tpl.substitute(
+            FILEPATH=master_file,
+            OUTPUT_PATH=filepath,
+            SETTINGS=setting_data
+        )
+        end_script = end_script.substitute(
+            OUTPUT_PATH=filepath,
+            OUTPUT_PATH_PROGRESS=version_path
+        )
+
+        if setting_data.get("script"):
+            with open(setting_data.get("script"), "r") as f:
+                preset_code = f.read()
+                script = script + "\n\n" + preset_code + "\n\n"
+        script = script + end_script
+        return script
