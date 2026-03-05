@@ -50,7 +50,6 @@ bpy.ops.wm.quit_blender()
         if setting_data and setting_data.get("script"):
             with open(setting_data.get("script"), "r") as f:
                 preset_code = f.read()
-                preset_code = preset_code.replace("$TOTAL_FRAME", str(setting_data["frame_out"] - setting_data["frame_in"] + 1))
                 script = script + "\n\n" + preset_code
         script = script + "\n\n" + end_script
         return script, master_path

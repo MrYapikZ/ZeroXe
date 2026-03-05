@@ -505,10 +505,11 @@ class HandleBLauncher(QWidget):
         if version_selected is None:
             QMessageBox.warning(self, "Warning", "Please select a version to up master.")
             return
-        if self.ui.comboBox_department.currentText().lower().startswith("animation").lower():
+        if self.ui.comboBox_department.currentText().lower().startswith("animation"):
             presets = [p for p in self.paths if
-                       p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith("bake_animation").lower()]
-            script, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole), {"script": presets})
+                       p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith("bake_animation")]
+            preset = presets[0].get("description", "") if presets else ""
+            script, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole), {"script": preset})
         else:
             script, master_blend_path = BlenderFunctions.up_master(version_selected.data(Qt.ItemDataRole.UserRole))
         SubprocessServices.run_command([blender_program, "-b", "--python-expr", script])
