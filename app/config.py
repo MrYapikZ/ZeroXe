@@ -16,7 +16,7 @@ def get_config_dir(app_name="myapp") -> str:
 
 class Settings:
     APP_NAME = "ZerØXe"
-    BUILD_VERSION = "v0.0.8"
+    BUILD_VERSION = "v0.0.9"
 
     KITSU_API_URL="http://192.168.99.38/api"
     KITSU_ALT_API_URL="http://patokitsu.synology.me/api"
