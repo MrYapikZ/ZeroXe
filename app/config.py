@@ -2,11 +2,6 @@ import os
 import platform
 import json
 from cryptography.fernet import Fernet
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
 
 def get_config_dir(app_name="myapp") -> str:
     system = platform.system()
@@ -40,7 +35,7 @@ class Settings:
     os.makedirs(os.path.dirname(AVATAR_FILE), exist_ok=True)
 
     def __init__(self):
-        fernet_key = os.getenv("FERNET_KEY")
+        fernet_key = ""
         if not fernet_key:
             raise ValueError("FERNET_KEY environment variable not set. Please configure it in your .env file.")
         # Fernet expects the key as bytes (already base64-encoded from .env)
