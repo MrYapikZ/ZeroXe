@@ -1,3 +1,4 @@
+import json
 from textwrap import dedent
 from string import Template
 from app.utils.versioning import VersioningSystem
@@ -451,7 +452,7 @@ bpy.ops.wm.quit_blender()
         if setting_data.get("script"):
             with open(setting_data.get("script"), "r") as f:
                 preset_code = f.read()
-                script = script + "\n\n" + preset_code + "\n\n"
+                script = script + "\n\n" + preset_code.replace("$SETTINGS", json.dumps(setting_data)) + "\n\n"
         script = script + end_script
         return script
 
