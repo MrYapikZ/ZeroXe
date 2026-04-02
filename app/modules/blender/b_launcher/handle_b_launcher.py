@@ -768,7 +768,7 @@ class HandleBLauncher(QWidget):
             "frame_out": frame_out,
             "fps": fps,
             "resolution": resolution,
-            "ops_blp": blp_preset_path,
+            "ops_blp": str(blp_preset_path),
             "script": presets[0].get("description", "") if presets else "",
         }
 
