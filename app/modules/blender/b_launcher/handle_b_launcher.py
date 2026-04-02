@@ -751,7 +751,7 @@ class HandleBLauncher(QWidget):
         anim_department = [c.get("name", "") for c in self.paths if c.get("name", "").lower().startswith("bpath-") and c.get("name", "").lower().endswith("animation")]
         _, anim_path = self.build_shot_path(str(anim_department[0]))
         blp_preset_base_path = [p.get("description", "") for p in self.paths if p.get("name", "").lower().startswith("bpath-") and p.get("name", "").lower().endswith("ops_blp")]
-        blp_preset_path = Path(blp_preset_base_path[0]) / lit_name / f"{lit_name}.json" if lit_name else None
+        blp_preset_path = Path(blp_preset_base_path[0]) / f"{lit_name}.json" if lit_name else None
 
         presets = [p for p in self.paths if
                    p.get("name", "").lower().startswith("preset-") and p.get("name", "").lower().endswith(
