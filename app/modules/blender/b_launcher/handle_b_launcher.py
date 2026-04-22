@@ -56,6 +56,16 @@ class HandleBLauncher(QWidget):
         else:
             self.on_select_blender()
 
+    def get_user_id(self):
+        if AppState().user_data is None:
+            QMessageBox.warning(self, "Warning", "User data not found. Please log in again.")
+            return
+        user_data = AppState().user_data or {}
+        user_dict = user_data.get("user", {}) or {}
+        user_id = user_dict.get("id", "")
+        self.user_id = user_id
+
+    # region ui trigger
     def mount_function(self):
         self.ui.comboBox_department.currentIndexChanged.connect(self.on_department_change)
         self.ui.comboBox_project.currentIndexChanged.connect(self.on_project_change)
@@ -71,20 +81,6 @@ class HandleBLauncher(QWidget):
         self.ui.pushButton_unlock.clicked.connect(self.on_unlock_file)
         self.ui.pushButton_replace.clicked.connect(self.on_replace_file)
         self.ui.radioButton_showMaster.toggled.connect(lambda checked: self.load_version(checked))
-
-    def load_departments(self):
-        departments = PersonServices.get_departments()
-        self.departments = departments
-
-        self.ui.comboBox_department.clear()
-        self.ui.comboBox_department.addItem("--- Select Department ---", None)
-        for department in departments:
-            self.ui.comboBox_department.addItem(department["name"], department["id"])
-
-        self.ui.comboBox_project.setEnabled(False)
-        self.ui.comboBox_entity.setEnabled(False)
-        self.ui.comboBox_episode.setEnabled(False)
-        self.ui.comboBox_type.setEnabled(False)
 
     def on_department_change(self):
         projects = ProjectServices.get_projects()
@@ -179,268 +175,6 @@ class HandleBLauncher(QWidget):
         if file_path:
             self.ui.lineEdit_blenderPath.setText(file_path)
             Settings().update_user_field(key="blender_path", value=file_path)
-
-    def load_assets(self):
-        project_id = self.ui.comboBox_project.currentData()
-        assets = AssetServices.get_assets_by_project_id(project_id)
-
-        asset_types = AssetServices.get_asset_types_by_project_id(project_id)
-        self.asset_types = asset_types
-
-        self.ui.comboBox_type.clear()
-        self.ui.comboBox_type.addItem("--- Select Type ---", None)
-        for asset_type in asset_types:
-            self.ui.comboBox_type.addItem(asset_type["name"], asset_type["id"])
-        
-        self.assets = []
-        for asset in assets:
-            if asset["name"].startswith("bpath-"):
-                continue
-            item = QListWidgetItem(asset["name"])
-            item.setData(Qt.ItemDataRole.UserRole, asset["id"])
-            self.ui.listWidget_list.addItem(item)
-            self.assets.append(asset)
-
-    def load_sequence_and_shot(self):
-        self.ui.listWidget_list.clear()
-        episode_id = self.ui.comboBox_episode.currentData()
-        if episode_id is None:
-            return
-
-        sequences = ShotServices.get_sequences_by_episode_id(episode_id)
-        self.sequences = sequences
-
-        shots = ShotServices.get_shots_by_episode_id(episode_id)
-        self.shots = shots
-
-        seq_lookup = {seq["id"]: seq["name"] for seq in sequences}
-        for shot in shots:
-            seq_name = seq_lookup.get(shot["parent_id"]) or ""
-            shot_name = shot["name"]
-            item_name = f"{seq_name}_{shot_name}"
-
-            item = QListWidgetItem(item_name)
-            item.setData(Qt.ItemDataRole.UserRole, {
-                "sequence_id": shot["parent_id"],
-                "shot_id": shot["id"],
-                "sequence_name": seq_name,
-                "shot_name": shot_name
-            })
-            self.ui.listWidget_list.addItem(item)
-
-    def load_latest_log(self, file_path: str | None = None):
-        if self.selected_item is None:
-            return
-
-        master_path, full_path = self.shot_or_asset_path()
-
-        if full_path and file_path is None:
-            file_path = str(full_path)
-        file_log = VersioningSystem.get_latest_log(str(master_path), file_path)
-        if file_log:
-            timestamp = file_log.get("date")
-            file_log["date"] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "N/A"
-            author = file_log.get("author")
-            file_log["author"] = f"{PersonServices.get_person_by_id(author).get("first_name", "")} {PersonServices.get_person_by_id(author).get("last_name", "")}"
-            file_log["locked"] = str(file_log["locked"])
-        return file_log
-
-    def metadata_table(self, custom_field_map: dict | None = None, custom_item_data: dict | None = None):
-        if self.selected_item is None:
-            return
-
-        item_data = self.selected_item
-
-        file_log = self.load_latest_log()
-        if file_log:
-            item_data["date"] = file_log["date"]
-            item_data["author"] = file_log["author"]
-            item_data["locked"] = file_log["locked"]
-
-        metadata_model = QStandardItemModel()
-        metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
-
-        metadata_field_map = {
-            "name": "Name",
-            "status": "Status",
-        }
-        if self.ui.comboBox_entity.currentIndex() == 1:
-            metadata_field_map["asset_type_name"] = "Type"
-        metadata_field_map.update({
-            "locked": "Locked",
-            "date": "Date",
-            "author": "Author",
-        })
-        if custom_field_map:
-            metadata_field_map = custom_field_map
-        if custom_item_data:
-            item_data = custom_item_data
-
-        for key, label in metadata_field_map.items():
-            key_value = item_data.get(key, "")
-            if key_value: 
-                label = QStandardItem(label)
-                label.setEditable(False)
-                item = QStandardItem(key_value)
-                item.setEditable(False)
-                metadata_model.appendRow([
-                    label,
-                    item
-                ])
-
-        self.ui.tableView_metadata.setModel(metadata_model)
-        self.ui.tableView_metadata.setWordWrap(True)
-        
-    def load_metadata(self, asset_or_shot_id):
-        if asset_or_shot_id is None:
-            return
-
-        if self.ui.comboBox_entity.currentIndex() == 1:
-            asset_data = AssetServices.get_asset_by_id(asset_or_shot_id)
-            asset_tasks = TaskServices.get_tasks_by_asset_id(asset_or_shot_id)
-            self.selected_item = asset_data
-
-            self.metadata_table()
-
-            task_model = QStandardItemModel()
-            task_model.setHorizontalHeaderLabels(["Name", "Status"])
-
-            task_field_map = {
-                "task_type_name": "task_status_name",
-            }
-
-            for name, status in task_field_map.items():
-                for task in asset_tasks:
-                    task_type_name = task.get(name, "")
-                    task_status_name = task.get(status, "")
-                    if task_type_name and task_status_name:
-                        item_name = QStandardItem(task_type_name)
-                        item_name.setEditable(False)
-                        item_status = QStandardItem(task_status_name)
-                        item_status.setEditable(False)
-                        task_model.appendRow([
-                            item_name,
-                            item_status
-                        ])
-
-            self.ui.tableView_task.setModel(task_model)
-            self.ui.tableView_task.setWordWrap(True)
-        elif self.ui.comboBox_entity.currentIndex() == 2:
-            shot_data = ShotServices.get_shot_by_id(asset_or_shot_id)
-            shot_tasks = TaskServices.get_tasks_by_shot_id(asset_or_shot_id)
-            self.selected_item = shot_data
-
-            self.metadata_table()
-
-            task_model = QStandardItemModel()
-            task_model.setHorizontalHeaderLabels(["Name", "Status"])
-
-            task_field_map = {
-                "task_type_name": "task_status_name",
-            }
-
-            for name, status in task_field_map.items():
-                for task in shot_tasks:
-                    task_type_name = task.get(name, "")
-                    task_status_name = task.get(status, "")
-                    if task_type_name and task_status_name:
-                        item_name = QStandardItem(task_type_name)
-                        item_name.setEditable(False)
-                        item_status = QStandardItem(task_status_name)
-                        item_status.setEditable(False)
-                        task_model.appendRow([
-                            item_name,
-                            item_status
-                        ])
-
-            self.ui.tableView_task.setModel(task_model)
-            self.ui.tableView_task.setWordWrap(True)
-
-        self.load_version()
-
-    def load_version(self, show_master: bool = False):
-        self.ui.listWidget_version.clear()
-        if self.selected_item is None:
-            return
-        
-        master_path, full_path = self.shot_or_asset_path()
-        
-        if self.ui.comboBox_entity.currentIndex() == 1:
-            master_file_path = Path(master_path) / f"{self.selected_item['name']}.blend"
-            if show_master:
-                master_item = QListWidgetItem("Master")
-                master_item.setData(Qt.ItemDataRole.UserRole, master_file_path)
-                self.ui.listWidget_version.addItem(master_item)
-            self.selected_path = str(master_file_path)
-        elif self.ui.comboBox_entity.currentIndex() == 2:
-            if show_master:
-                master_item = QListWidgetItem("Master")
-                master_item.setData(Qt.ItemDataRole.UserRole, full_path)
-                self.ui.listWidget_version.addItem(master_item)
-            self.selected_path = str(full_path)
-        version_folder = VersioningSystem.get_version_folder(master_path)
-        version_info_list = VersioningSystem.get_version_info_list(str(version_folder))
-        for version_info in version_info_list:
-            item = QListWidgetItem(version_info["version"])
-            item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
-            self.ui.listWidget_version.addItem(item)
-        self.ui.listWidget_list.sortItems()
-
-    def load_version_metadata(self, version_name: str, version_path: str):
-        if self.selected_item is None:
-            return
-
-        self.selected_path = version_path
-
-        custom_field_map, custom_asset_data = {}, {}
-        if self.ui.comboBox_entity.currentIndex() == 1:
-            custom_field_map = {
-                "name": "Name",
-                "status": "Status",
-                "asset_type_name": "Type",
-                "version": "Version",
-                "date": "Date",
-                "author": "Author",
-                "locked": "Locked",
-            }
-            custom_asset_data = {
-                    "name": self.selected_item["name"],
-                    "status": self.selected_item["status"],
-                    "asset_type_name": self.selected_item["asset_type_name"],
-                    "version": version_name,
-            }
-            
-        elif self.ui.comboBox_entity.currentIndex() == 2:
-            custom_field_map = {
-                "name": "Name",
-                "status": "Status",
-                "department": "Department",
-                "version": "Version",
-                "date": "Date",
-                "author": "Author",
-                "locked": "Locked",
-            }
-            item = self.ui.listWidget_list.currentItem()
-            custom_asset_data = {
-                "name": item.text() if item else "Unknown",
-                "status": self.selected_item["status"],
-                "department": self.ui.comboBox_department.currentText(),
-                "version": version_name,
-            }
-        file_log = self.load_latest_log(version_path)
-        if file_log:
-            custom_asset_data.update({
-                "date": file_log["date"],
-                "author": file_log["author"],
-                "locked": file_log["locked"],
-            })  
-        self.metadata_table(custom_field_map=custom_field_map, custom_item_data=custom_asset_data)
-
-    def reload_version_metadata(self):
-        version_item = self.ui.listWidget_version.currentItem()
-        version_name = "Master" if version_item is None else version_item.text()
-        version_path = self.selected_path if version_item is None else version_item.data(Qt.ItemDataRole.UserRole)
-        self.load_version_metadata(version_name, str(version_path))
 
     def on_open_selected_file(self):
         if self.selected_path is None:
@@ -555,7 +289,298 @@ class HandleBLauncher(QWidget):
                 QMessageBox.information(self, "Info", "Successfully replaced master file.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to replace master file: {str(e)}")
+                
+    # endregion
 
+    # region populate data
+    # Department dropdown
+    def load_departments(self):
+        departments = PersonServices.get_departments()
+        self.departments = departments
+
+        self.ui.comboBox_department.clear()
+        self.ui.comboBox_department.addItem("--- Select Department ---", None)
+        for department in departments:
+            self.ui.comboBox_department.addItem(department["name"], department["id"])
+
+        self.ui.comboBox_project.setEnabled(False)
+        self.ui.comboBox_entity.setEnabled(False)
+        self.ui.comboBox_episode.setEnabled(False)
+        self.ui.comboBox_type.setEnabled(False)
+    
+    # List widget for assets
+    def load_assets(self):
+        project_id = self.ui.comboBox_project.currentData()
+        assets = AssetServices.get_assets_by_project_id(project_id)
+
+        asset_types = AssetServices.get_asset_types_by_project_id(project_id)
+        self.asset_types = asset_types
+
+        self.ui.comboBox_type.clear()
+        self.ui.comboBox_type.addItem("--- Select Type ---", None)
+        for asset_type in asset_types:
+            self.ui.comboBox_type.addItem(asset_type["name"], asset_type["id"])
+        
+        self.assets = []
+        for asset in assets:
+            if asset["name"].startswith("bpath-"):
+                continue
+            item = QListWidgetItem(asset["name"])
+            item.setData(Qt.ItemDataRole.UserRole, asset["id"])
+            self.ui.listWidget_list.addItem(item)
+            self.assets.append(asset)
+
+    # List widget for shots
+    def load_sequence_and_shot(self):
+        self.ui.listWidget_list.clear()
+        episode_id = self.ui.comboBox_episode.currentData()
+        if episode_id is None:
+            return
+
+        sequences = ShotServices.get_sequences_by_episode_id(episode_id)
+        self.sequences = sequences
+
+        shots = ShotServices.get_shots_by_episode_id(episode_id)
+        self.shots = shots
+
+        seq_lookup = {seq["id"]: seq["name"] for seq in sequences}
+        for shot in shots:
+            seq_name = seq_lookup.get(shot["parent_id"]) or ""
+            shot_name = shot["name"]
+            item_name = f"{seq_name}_{shot_name}"
+
+            item = QListWidgetItem(item_name)
+            item.setData(Qt.ItemDataRole.UserRole, {
+                "sequence_id": shot["parent_id"],
+                "shot_id": shot["id"],
+                "sequence_name": seq_name,
+                "shot_name": shot_name
+            })
+            self.ui.listWidget_list.addItem(item)
+
+    # .zeroxe log data
+    def load_latest_log(self, file_path: str | None = None):
+        if self.selected_item is None:
+            return
+
+        master_path, full_path = self.shot_or_asset_path()
+
+        if full_path and file_path is None:
+            file_path = str(full_path)
+        file_log = VersioningSystem.get_latest_log(str(master_path), file_path)
+        if file_log:
+            timestamp = file_log.get("date")
+            file_log["date"] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "N/A"
+            author = file_log.get("author")
+            file_log["author"] = f"{PersonServices.get_person_by_id(author).get("first_name", "")} {PersonServices.get_person_by_id(author).get("last_name", "")}"
+            file_log["locked"] = str(file_log["locked"])
+        return file_log
+
+    # Table view metadata
+    def metadata_table(self, custom_field_map: dict | None = None, custom_item_data: dict | None = None):
+        if self.selected_item is None:
+            return
+
+        item_data = self.selected_item
+
+        file_log = self.load_latest_log()
+        if file_log:
+            item_data["date"] = file_log["date"]
+            item_data["author"] = file_log["author"]
+            item_data["locked"] = file_log["locked"]
+
+        metadata_model = QStandardItemModel()
+        metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
+
+        metadata_field_map = {
+            "name": "Name",
+            "status": "Status",
+        }
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            metadata_field_map["asset_type_name"] = "Type"
+        metadata_field_map.update({
+            "locked": "Locked",
+            "date": "Date",
+            "author": "Author",
+        })
+        if custom_field_map:
+            metadata_field_map = custom_field_map
+        if custom_item_data:
+            item_data = custom_item_data
+
+        for key, label in metadata_field_map.items():
+            key_value = item_data.get(key, "")
+            if key_value: 
+                label = QStandardItem(label)
+                label.setEditable(False)
+                item = QStandardItem(key_value)
+                item.setEditable(False)
+                metadata_model.appendRow([
+                    label,
+                    item
+                ])
+
+        self.ui.tableView_metadata.setModel(metadata_model)
+        self.ui.tableView_metadata.setWordWrap(True)
+    
+    # Table view task and metadata trigger
+    def load_metadata(self, asset_or_shot_id):
+        if asset_or_shot_id is None:
+            return
+
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            asset_data = AssetServices.get_asset_by_id(asset_or_shot_id)
+            asset_tasks = TaskServices.get_tasks_by_asset_id(asset_or_shot_id)
+            self.selected_item = asset_data
+
+            self.metadata_table()
+
+            task_model = QStandardItemModel()
+            task_model.setHorizontalHeaderLabels(["Name", "Status"])
+
+            task_field_map = {
+                "task_type_name": "task_status_name",
+            }
+
+            for name, status in task_field_map.items():
+                for task in asset_tasks:
+                    task_type_name = task.get(name, "")
+                    task_status_name = task.get(status, "")
+                    if task_type_name and task_status_name:
+                        item_name = QStandardItem(task_type_name)
+                        item_name.setEditable(False)
+                        item_status = QStandardItem(task_status_name)
+                        item_status.setEditable(False)
+                        task_model.appendRow([
+                            item_name,
+                            item_status
+                        ])
+
+            self.ui.tableView_task.setModel(task_model)
+            self.ui.tableView_task.setWordWrap(True)
+        elif self.ui.comboBox_entity.currentIndex() == 2:
+            shot_data = ShotServices.get_shot_by_id(asset_or_shot_id)
+            shot_tasks = TaskServices.get_tasks_by_shot_id(asset_or_shot_id)
+            self.selected_item = shot_data
+
+            self.metadata_table()
+
+            task_model = QStandardItemModel()
+            task_model.setHorizontalHeaderLabels(["Name", "Status"])
+
+            task_field_map = {
+                "task_type_name": "task_status_name",
+            }
+
+            for name, status in task_field_map.items():
+                for task in shot_tasks:
+                    task_type_name = task.get(name, "")
+                    task_status_name = task.get(status, "")
+                    if task_type_name and task_status_name:
+                        item_name = QStandardItem(task_type_name)
+                        item_name.setEditable(False)
+                        item_status = QStandardItem(task_status_name)
+                        item_status.setEditable(False)
+                        task_model.appendRow([
+                            item_name,
+                            item_status
+                        ])
+
+            self.ui.tableView_task.setModel(task_model)
+            self.ui.tableView_task.setWordWrap(True)
+
+        self.load_version()
+
+    # List view version
+    def load_version(self, show_master: bool = False):
+        self.ui.listWidget_version.clear()
+        if self.selected_item is None:
+            return
+        
+        master_path, full_path = self.shot_or_asset_path()
+        
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            master_file_path = Path(master_path) / f"{self.selected_item['name']}.blend"
+            if show_master:
+                master_item = QListWidgetItem("Master")
+                master_item.setData(Qt.ItemDataRole.UserRole, master_file_path)
+                self.ui.listWidget_version.addItem(master_item)
+            self.selected_path = str(master_file_path)
+        elif self.ui.comboBox_entity.currentIndex() == 2:
+            if show_master:
+                master_item = QListWidgetItem("Master")
+                master_item.setData(Qt.ItemDataRole.UserRole, full_path)
+                self.ui.listWidget_version.addItem(master_item)
+            self.selected_path = str(full_path)
+        version_folder = VersioningSystem.get_version_folder(master_path)
+        version_info_list = VersioningSystem.get_version_info_list(str(version_folder))
+        for version_info in version_info_list:
+            item = QListWidgetItem(version_info["version"])
+            item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
+            self.ui.listWidget_version.addItem(item)
+        self.ui.listWidget_list.sortItems()
+
+    # Table view metadata for version
+    def load_version_metadata(self, version_name: str, version_path: str):
+        if self.selected_item is None:
+            return
+
+        self.selected_path = version_path
+
+        custom_field_map, custom_asset_data = {}, {}
+        if self.ui.comboBox_entity.currentIndex() == 1:
+            custom_field_map = {
+                "name": "Name",
+                "status": "Status",
+                "asset_type_name": "Type",
+                "version": "Version",
+                "date": "Date",
+                "author": "Author",
+                "locked": "Locked",
+            }
+            custom_asset_data = {
+                    "name": self.selected_item["name"],
+                    "status": self.selected_item["status"],
+                    "asset_type_name": self.selected_item["asset_type_name"],
+                    "version": version_name,
+            }
+            
+        elif self.ui.comboBox_entity.currentIndex() == 2:
+            custom_field_map = {
+                "name": "Name",
+                "status": "Status",
+                "department": "Department",
+                "version": "Version",
+                "date": "Date",
+                "author": "Author",
+                "locked": "Locked",
+            }
+            item = self.ui.listWidget_list.currentItem()
+            custom_asset_data = {
+                "name": item.text() if item else "Unknown",
+                "status": self.selected_item["status"],
+                "department": self.ui.comboBox_department.currentText(),
+                "version": version_name,
+            }
+        file_log = self.load_latest_log(version_path)
+        if file_log:
+            custom_asset_data.update({
+                "date": file_log["date"],
+                "author": file_log["author"],
+                "locked": file_log["locked"],
+            })  
+        self.metadata_table(custom_field_map=custom_field_map, custom_item_data=custom_asset_data)
+
+    # Table view metadata refersh for version
+    def reload_version_metadata(self):
+        version_item = self.ui.listWidget_version.currentItem()
+        version_name = "Master" if version_item is None else version_item.text()
+        version_path = self.selected_path if version_item is None else version_item.data(Qt.ItemDataRole.UserRole)
+        self.load_version_metadata(version_name, str(version_path))
+    # endregion
+
+    # TODO: Move path builder to dynamic
+    # region Path builder
     def build_shot_path(self, custom_department: str | None = None):
         selected = self.ui.listWidget_list.currentItem()
         if selected is None:
@@ -596,7 +621,39 @@ class HandleBLauncher(QWidget):
             department_code=department_code
         )
         return str(file_path), str(file_path / f"{file_name}.blend")
+    
+    def shot_or_asset_path(self, select: int = 0):
+        asset_data = self.selected_item
+        if asset_data is None:
+            QMessageBox.warning(self, "Warning", "Please select an item.")
+            return ""
 
+        master_path, file_path = "", ""
+        if self.ui.comboBox_entity.currentIndex() == 1 or select == 1:
+            base_path = [i for i in self.paths if i["entity_type_id"] == asset_data["asset_type_id"]]
+            master_path = Path(f"{base_path[0].get('description', '')}/{asset_data['name']}")
+            file_path = master_path / f"{asset_data['name']}.blend"
+        elif self.ui.comboBox_entity.currentIndex() == 2 or select == 2:
+            master_path, file_path = self.build_shot_path()
+        return str(master_path), str(file_path)
+    
+    def get_target_department_path(self, file_path):
+        file_path = Path(file_path)
+        stem = file_path.stem
+        code = stem.split("_")[-1]
+        department = next(
+            (d for d in self.paths if d["data"].get("code", None) == code),
+            None
+        )
+        target_code = department.get("data", {}).get("tcode") if department else ""
+        if target_code == "init":
+            return "", "", target_code
+        target_department = self.get_department_by_code(target_code)
+        master_path, file_path = self.build_shot_path(target_department)
+        return master_path, file_path, target_code
+    # endregion
+
+    # region Department code & path (no needed i think)
     def get_department_code(self, custom_department: str | None = None):
         selected_department = custom_department or self.ui.comboBox_department.currentText().lower()
         department = next(
@@ -619,46 +676,10 @@ class HandleBLauncher(QWidget):
         )
 
         return department.get("name") if department else None
-
-    def get_target_department_path(self, file_path: str):
-        file_path = Path(file_path)
-        stem = file_path.stem
-        code = stem.split("_")[-1]
-        department = next(
-            (d for d in self.paths if d["data"].get("code", None) == code),
-            None
-        )
-        target_code = department.get("data", {}).get("tcode") if department else ""
-        if target_code == "init":
-            return "", "", target_code
-        target_department = self.get_department_by_code(target_code)
-        master_path, file_path = self.build_shot_path(target_department)
-        return master_path, file_path, target_code
-
-    def get_user_id(self):
-        if AppState().user_data is None:
-            QMessageBox.warning(self, "Warning", "User data not found. Please log in again.")
-            return
-        user_data = AppState().user_data or {}
-        user_dict = user_data.get("user", {}) or {}
-        user_id = user_dict.get("id", "")
-        self.user_id = user_id
-        
-    def shot_or_asset_path(self, select: int = 0):
-        asset_data = self.selected_item
-        if asset_data is None:
-            QMessageBox.warning(self, "Warning", "Please select an item.")
-            return ""
-
-        master_path, file_path = "", ""
-        if self.ui.comboBox_entity.currentIndex() == 1 or select == 1:
-            base_path = [i for i in self.paths if i["entity_type_id"] == asset_data["asset_type_id"]]
-            master_path = Path(f"{base_path[0].get('description', '')}/{asset_data['name']}")
-            file_path = master_path / f"{asset_data['name']}.blend"
-        elif self.ui.comboBox_entity.currentIndex() == 2 or select == 2:
-            master_path, file_path = self.build_shot_path()
-        return str(master_path), str(file_path)
+    # endregion
     
+    # TODO: Move script builder to dynamic
+    # region Script builder
     def build_layout_file(self, file_path: str, version_path: str):
         selected_item = self.ui.listWidget_list.currentItem()
         if selected_item is None:
@@ -824,6 +845,9 @@ class HandleBLauncher(QWidget):
         create_script = BlenderFunctions.build_comp_script(filepath=str(file_path), version_path=str(version_path), master_file=str(ms_comp_path), setting_data=setting_data)
         return create_script
 
+    #endregion
+
+    # TODO: Move file maker to dynamic
     def create_and_replace_file(self):
         file_path = Path(self.selected_path)
         if (self.load_latest_log(str(file_path)) or {}).get("locked", "").lower() == "true":
@@ -866,6 +890,7 @@ class HandleBLauncher(QWidget):
         VersioningSystem.init_log(base_path=str(master_path), file_path=str(init_version_path), locked=False,
                                   timestamp=time.time(), author=self.user_id)
 
+    # region List search function 
     def wire_search_list(self):
         le = self.ui.lineEdit_list
         if le:
@@ -879,3 +904,4 @@ class HandleBLauncher(QWidget):
             if item is None:
                 continue
             item.setHidden(text_low not in item.text().lower())
+    # endregion

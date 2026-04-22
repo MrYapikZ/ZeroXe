@@ -84,6 +84,71 @@ class Ui_Form(object):
         self.pushButton_replace.setObjectName("pushButton_replace")
         self.gridLayout_function.addWidget(self.pushButton_replace, 2, 0, 1, 2)
         self.gridLayout_main.addLayout(self.gridLayout_function, 1, 1, 1, 1)
+        self.gridWidget_metadata = QtWidgets.QWidget(parent=Form)
+        self.gridWidget_metadata.setStyleSheet(".QTableView {\n"
+"border-radius: 5%;\n"
+"border: 1px solid black;\n"
+"}")
+        self.gridWidget_metadata.setObjectName("gridWidget_metadata")
+        self.gridLayout_metadata = QtWidgets.QGridLayout(self.gridWidget_metadata)
+        self.gridLayout_metadata.setObjectName("gridLayout_metadata")
+        self.label_metadata = QtWidgets.QLabel(parent=self.gridWidget_metadata)
+        self.label_metadata.setObjectName("label_metadata")
+        self.gridLayout_metadata.addWidget(self.label_metadata, 0, 0, 1, 1)
+        self.tableView_task = QtWidgets.QTableView(parent=self.gridWidget_metadata)
+        self.tableView_task.setObjectName("tableView_task")
+        self.gridLayout_metadata.addWidget(self.tableView_task, 3, 0, 1, 1)
+        self.label_task = QtWidgets.QLabel(parent=self.gridWidget_metadata)
+        self.label_task.setObjectName("label_task")
+        self.gridLayout_metadata.addWidget(self.label_task, 2, 0, 1, 1)
+        self.tableView_metadata = QtWidgets.QTableView(parent=self.gridWidget_metadata)
+        self.tableView_metadata.setObjectName("tableView_metadata")
+        self.gridLayout_metadata.addWidget(self.tableView_metadata, 1, 0, 1, 1)
+        self.gridLayout_main.addWidget(self.gridWidget_metadata, 0, 2, 1, 1)
+        self.verticalWidget_version = QtWidgets.QWidget(parent=Form)
+        self.verticalWidget_version.setStyleSheet(".QListWidget {\n"
+"border-radius: 5%;\n"
+"border: 1px solid black;\n"
+"}\n"
+"")
+        self.verticalWidget_version.setObjectName("verticalWidget_version")
+        self.verticalLayout_version = QtWidgets.QVBoxLayout(self.verticalWidget_version)
+        self.verticalLayout_version.setObjectName("verticalLayout_version")
+        self.label_version = QtWidgets.QLabel(parent=self.verticalWidget_version)
+        self.label_version.setObjectName("label_version")
+        self.verticalLayout_version.addWidget(self.label_version)
+        self.radioButton_showMaster = QtWidgets.QRadioButton(parent=self.verticalWidget_version)
+        self.radioButton_showMaster.setObjectName("radioButton_showMaster")
+        self.verticalLayout_version.addWidget(self.radioButton_showMaster)
+        self.listWidget_version = QtWidgets.QListWidget(parent=self.verticalWidget_version)
+        self.listWidget_version.setObjectName("listWidget_version")
+        self.verticalLayout_version.addWidget(self.listWidget_version)
+        self.gridLayout_main.addWidget(self.verticalWidget_version, 1, 2, 1, 1)
+        self.verticalWidget_list = QtWidgets.QWidget(parent=Form)
+        self.verticalWidget_list.setStyleSheet(".QListWidget {\n"
+"border-radius: 5%;\n"
+"border: 1px solid black;\n"
+"}\n"
+"\n"
+".QLineEdit {\n"
+"border-radius: 5%;\n"
+"border: 1px solid black;\n"
+"}\n"
+"")
+        self.verticalWidget_list.setObjectName("verticalWidget_list")
+        self.verticalLayout_list = QtWidgets.QVBoxLayout(self.verticalWidget_list)
+        self.verticalLayout_list.setObjectName("verticalLayout_list")
+        self.lineEdit_list = QtWidgets.QLineEdit(parent=self.verticalWidget_list)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.lineEdit_list.setFont(font)
+        self.lineEdit_list.setStatusTip("")
+        self.lineEdit_list.setObjectName("lineEdit_list")
+        self.verticalLayout_list.addWidget(self.lineEdit_list)
+        self.listWidget_list = QtWidgets.QListWidget(parent=self.verticalWidget_list)
+        self.listWidget_list.setObjectName("listWidget_list")
+        self.verticalLayout_list.addWidget(self.listWidget_list)
+        self.gridLayout_main.addWidget(self.verticalWidget_list, 0, 0, 2, 1)
         self.verticalWidget_search = QtWidgets.QWidget(parent=Form)
         self.verticalWidget_search.setStyleSheet("/* The main box */\n"
 "QComboBox {\n"
@@ -112,6 +177,13 @@ class Ui_Form(object):
         self.verticalWidget_search.setObjectName("verticalWidget_search")
         self.verticalLayout_search = QtWidgets.QVBoxLayout(self.verticalWidget_search)
         self.verticalLayout_search.setObjectName("verticalLayout_search")
+        self.label = QtWidgets.QLabel(parent=self.verticalWidget_search)
+        font = QtGui.QFont()
+        font.setPointSize(16)
+        font.setBold(True)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.verticalLayout_search.addWidget(self.label)
         self.verticalLayout_department = QtWidgets.QVBoxLayout()
         self.verticalLayout_department.setObjectName("verticalLayout_department")
         self.label_department = QtWidgets.QLabel(parent=self.verticalWidget_search)
@@ -159,68 +231,7 @@ class Ui_Form(object):
         self.verticalLayout_search.addLayout(self.verticalLayout_type)
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_search.addItem(spacerItem1)
-        self.gridLayout_main.addWidget(self.verticalWidget_search, 0, 2, 1, 1)
-        self.gridWidget_metadata = QtWidgets.QWidget(parent=Form)
-        self.gridWidget_metadata.setStyleSheet(".QTableView {\n"
-"border-radius: 5%;\n"
-"border: 1px solid black;\n"
-"}")
-        self.gridWidget_metadata.setObjectName("gridWidget_metadata")
-        self.gridLayout_metadata = QtWidgets.QGridLayout(self.gridWidget_metadata)
-        self.gridLayout_metadata.setObjectName("gridLayout_metadata")
-        self.tableView_metadata = QtWidgets.QTableView(parent=self.gridWidget_metadata)
-        self.tableView_metadata.setObjectName("tableView_metadata")
-        self.gridLayout_metadata.addWidget(self.tableView_metadata, 1, 0, 1, 1)
-        self.tableView_task = QtWidgets.QTableView(parent=self.gridWidget_metadata)
-        self.tableView_task.setObjectName("tableView_task")
-        self.gridLayout_metadata.addWidget(self.tableView_task, 3, 0, 1, 1)
-        self.label_metadata = QtWidgets.QLabel(parent=self.gridWidget_metadata)
-        self.label_metadata.setObjectName("label_metadata")
-        self.gridLayout_metadata.addWidget(self.label_metadata, 0, 0, 1, 1)
-        self.label_task = QtWidgets.QLabel(parent=self.gridWidget_metadata)
-        self.label_task.setObjectName("label_task")
-        self.gridLayout_metadata.addWidget(self.label_task, 2, 0, 1, 1)
-        self.gridLayout_main.addWidget(self.gridWidget_metadata, 0, 1, 1, 1)
-        self.verticalWidget_list = QtWidgets.QWidget(parent=Form)
-        self.verticalWidget_list.setStyleSheet(".QListWidget {\n"
-"border-radius: 5%;\n"
-"border: 1px solid black;\n"
-"}\n"
-"\n"
-".QLineEdit {\n"
-"border-radius: 5%;\n"
-"border: 1px solid black;\n"
-"}\n"
-"")
-        self.verticalWidget_list.setObjectName("verticalWidget_list")
-        self.verticalLayout_list = QtWidgets.QVBoxLayout(self.verticalWidget_list)
-        self.verticalLayout_list.setObjectName("verticalLayout_list")
-        self.lineEdit_list = QtWidgets.QLineEdit(parent=self.verticalWidget_list)
-        self.lineEdit_list.setObjectName("lineEdit_list")
-        self.verticalLayout_list.addWidget(self.lineEdit_list)
-        self.listWidget_list = QtWidgets.QListWidget(parent=self.verticalWidget_list)
-        self.listWidget_list.setObjectName("listWidget_list")
-        self.verticalLayout_list.addWidget(self.listWidget_list)
-        self.gridLayout_main.addWidget(self.verticalWidget_list, 0, 0, 2, 1)
-        self.verticalWidget_version = QtWidgets.QWidget(parent=Form)
-        self.verticalWidget_version.setStyleSheet(".QListWidget {\n"
-"border-radius: 5%;\n"
-"border: 1px solid black;\n"
-"}\n"
-"")
-        self.verticalWidget_version.setObjectName("verticalWidget_version")
-        self.verticalLayout_version = QtWidgets.QVBoxLayout(self.verticalWidget_version)
-        self.verticalLayout_version.setObjectName("verticalLayout_version")
-        self.label_version = QtWidgets.QLabel(parent=self.verticalWidget_version)
-        self.label_version.setObjectName("label_version")
-        self.verticalLayout_version.addWidget(self.label_version)
-        self.radioButton_showMaster = QtWidgets.QRadioButton(parent=self.verticalWidget_version)
-        self.radioButton_showMaster.setObjectName("radioButton_showMaster")
-        self.verticalLayout_version.addWidget(self.radioButton_showMaster)
-        self.listWidget_version = QtWidgets.QListWidget(parent=self.verticalWidget_version)
-        self.listWidget_version.setObjectName("listWidget_version")
-        self.verticalLayout_version.addWidget(self.listWidget_version)
-        self.gridLayout_main.addWidget(self.verticalWidget_version, 1, 2, 1, 1)
+        self.gridLayout_main.addWidget(self.verticalWidget_search, 0, 1, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_main, 0, 0, 1, 1)
 
         self.retranslateUi(Form)
@@ -236,6 +247,13 @@ class Ui_Form(object):
         self.pushButton_upMaster.setText(_translate("Form", "UpMaster"))
         self.pushButton_open.setText(_translate("Form", "Open"))
         self.pushButton_replace.setText(_translate("Form", "Replace"))
+        self.label_metadata.setText(_translate("Form", "Metadata"))
+        self.label_task.setText(_translate("Form", "Task"))
+        self.label_version.setText(_translate("Form", "Version"))
+        self.radioButton_showMaster.setText(_translate("Form", "Show Master"))
+        self.lineEdit_list.setToolTip(_translate("Form", "Search Shot/Asset"))
+        self.lineEdit_list.setPlaceholderText(_translate("Form", "Search Shot"))
+        self.label.setText(_translate("Form", "Select First"))
         self.label_department.setText(_translate("Form", "Department"))
         self.comboBox_department.setPlaceholderText(_translate("Form", "-- Select Department --"))
         self.label_project.setText(_translate("Form", "Project"))
@@ -246,7 +264,3 @@ class Ui_Form(object):
         self.comboBox_episode.setPlaceholderText(_translate("Form", "-- Select Episode --"))
         self.label_type.setText(_translate("Form", "Type"))
         self.comboBox_type.setPlaceholderText(_translate("Form", "-- Select Type --"))
-        self.label_metadata.setText(_translate("Form", "Metadata"))
-        self.label_task.setText(_translate("Form", "Task"))
-        self.label_version.setText(_translate("Form", "Version"))
-        self.radioButton_showMaster.setText(_translate("Form", "Show Master"))

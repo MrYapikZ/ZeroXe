@@ -134,6 +134,107 @@ padding:4px;
       </layout>
      </item>
      <item row="0" column="2">
+      <widget class="QWidget" name="gridWidget_metadata" native="true">
+       <property name="styleSheet">
+        <string notr="true">.QTableView {
+border-radius: 5%;
+border: 1px solid black;
+}</string>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_metadata">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_metadata">
+          <property name="text">
+           <string>Metadata</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QTableView" name="tableView_task"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_task">
+          <property name="text">
+           <string>Task</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QTableView" name="tableView_metadata"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QWidget" name="verticalWidget_version" native="true">
+       <property name="styleSheet">
+        <string notr="true">.QListWidget {
+border-radius: 5%;
+border: 1px solid black;
+}
+</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_version">
+        <item>
+         <widget class="QLabel" name="label_version">
+          <property name="text">
+           <string>Version</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioButton_showMaster">
+          <property name="text">
+           <string>Show Master</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="listWidget_version"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="0" column="0" rowspan="2">
+      <widget class="QWidget" name="verticalWidget_list" native="true">
+       <property name="styleSheet">
+        <string notr="true">.QListWidget {
+border-radius: 5%;
+border: 1px solid black;
+}
+
+.QLineEdit {
+border-radius: 5%;
+border: 1px solid black;
+}
+</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_list">
+        <item>
+         <widget class="QLineEdit" name="lineEdit_list">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="toolTip">
+           <string>Search Shot/Asset</string>
+          </property>
+          <property name="statusTip">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string>Search Shot</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="listWidget_list"/>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="0" column="1">
       <widget class="QWidget" name="verticalWidget_search" native="true">
        <property name="styleSheet">
         <string notr="true">/* The main box */
@@ -162,6 +263,19 @@ QComboBox::down-arrow {
 </string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_search">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="font">
+           <font>
+            <pointsize>16</pointsize>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Select First</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_department">
           <item>
@@ -264,92 +378,6 @@ QComboBox::down-arrow {
            </size>
           </property>
          </spacer>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QWidget" name="gridWidget_metadata" native="true">
-       <property name="styleSheet">
-        <string notr="true">.QTableView {
-border-radius: 5%;
-border: 1px solid black;
-}</string>
-       </property>
-       <layout class="QGridLayout" name="gridLayout_metadata">
-        <item row="1" column="0">
-         <widget class="QTableView" name="tableView_metadata"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QTableView" name="tableView_task"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_metadata">
-          <property name="text">
-           <string>Metadata</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_task">
-          <property name="text">
-           <string>Task</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="0" column="0" rowspan="2">
-      <widget class="QWidget" name="verticalWidget_list" native="true">
-       <property name="styleSheet">
-        <string notr="true">.QListWidget {
-border-radius: 5%;
-border: 1px solid black;
-}
-
-.QLineEdit {
-border-radius: 5%;
-border: 1px solid black;
-}
-</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_list">
-        <item>
-         <widget class="QLineEdit" name="lineEdit_list"/>
-        </item>
-        <item>
-         <widget class="QListWidget" name="listWidget_list"/>
-        </item>
-       </layout>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QWidget" name="verticalWidget_version" native="true">
-       <property name="styleSheet">
-        <string notr="true">.QListWidget {
-border-radius: 5%;
-border: 1px solid black;
-}
-</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_version">
-        <item>
-         <widget class="QLabel" name="label_version">
-          <property name="text">
-           <string>Version</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="radioButton_showMaster">
-          <property name="text">
-           <string>Show Master</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListWidget" name="listWidget_version"/>
         </item>
        </layout>
       </widget>
