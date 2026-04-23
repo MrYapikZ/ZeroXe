@@ -35,7 +35,7 @@ class Settings:
     os.makedirs(os.path.dirname(AVATAR_FILE), exist_ok=True)
 
     def __init__(self):
-        fernet_key = ""
+        fernet_key = "CUMAaoyYzLm6145jLhElHR5CvWxOypbBPiXnUak6cJs="
         if not fernet_key:
             raise ValueError("FERNET_KEY environment variable not set. Please configure it in your .env file.")
         # Fernet expects the key as bytes (already base64-encoded from .env)

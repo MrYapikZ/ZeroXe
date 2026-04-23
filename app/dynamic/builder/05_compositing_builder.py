@@ -112,7 +112,10 @@ class CompositingBuilder:
         # }
         # filepath = {"final": "", "version": "", "source": ""}
         # endregion
-
+        
+        # Create parent folder
+        Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
+        
         # Get mastershot base path
         mastershot_name = "mastershot_compositing"
         current_mastershot = mastershots_data.get("mastershots", {}).get(

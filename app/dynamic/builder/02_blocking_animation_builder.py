@@ -60,6 +60,9 @@ class BlockingAnimationBuilder:
         # filepath = {"final": "", "version": "", "source": ""}
         # endregion
         
+        # Create parent folder
+        Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
+        
         # Copy from source
         start_script = f"import bpy; import os; bpy.ops.wm.open_mainfile(filepath='{filepath["source"]}'); bpy.ops.wm.save_as_mainfile(filepath='{filepath["version"]}');"
         end_script = f"bpy.ops.wm.save_as_mainfile(filepath='{filepath["final"]}'); bpy.ops.wm.save_as_mainfile(filepath='{filepath["version"]}')"

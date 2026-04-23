@@ -113,6 +113,9 @@ class VFXBuilder():
         # filepath = {"final": "", "version": "", "source": ""}
         # endregion
         
+        # Create parent folder
+        Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
+        
         # Get preset
         dept_data = next(iter(current_department.values()))
         preset_name = "playblast"

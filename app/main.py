@@ -14,6 +14,7 @@ from app.core.app_states import AppState
 
 from app.modules.blender.b_launcher.handle_b_launcher import HandleBLauncher
 from app.modules.test.setup.setup_department import HandleSetupDepartment
+from app.modules.test.b_launcher.handle_b_launcher import HandleBLauncherPreview
 
 class MainUI(QMainWindow):
     def __init__(self):
@@ -55,6 +56,7 @@ class MainUI(QMainWindow):
         self.ui.tabWidget.clear()
         self.ui.tabWidget.addTab(HandleBLauncher(), "BLauncher")
         self.ui.tabWidget.addTab(HandleSetupDepartment(), "Setup(preview)")
+        self.ui.tabWidget.addTab(HandleBLauncherPreview(), "BLauncher(preview)")
 
 # PyQt Program =====================================================================================
     def handle_logout(self):

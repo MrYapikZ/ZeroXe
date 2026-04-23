@@ -316,13 +316,12 @@ class CoreLauncher:
 
             if process.returncode == 0:
                 generated_script = stdout
-                print("Successfully generated script!")
+                # print("Successfully generated script!")
             else:
                 print(f"Failed: {stderr}")
 
             create_script = generated_script
 
-        print(create_script)
         return create_script
 
     # Build final shot

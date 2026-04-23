@@ -92,6 +92,9 @@ class LayoutBuilder:
         # }
         # filepath = {"final": "", "version": ""}
         # endregion
+        
+        # Create parent folder
+        Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
 
         # Get all asset list by asset type
         relative_assets = {}
@@ -118,8 +121,8 @@ class LayoutBuilder:
             base_dir = Path(data["base_path"])
 
             for asset in data["assets"]:
-                filename = f"{data['prefix']}{asset}.blend"
-                full_path = base_dir / filename
+                filename = f"{asset}.blend"
+                full_path = base_dir / asset / filename
 
                 # Convert back to string for Blender's libraries.load
                 paths.append(str(full_path))
