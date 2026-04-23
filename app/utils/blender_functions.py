@@ -55,6 +55,7 @@ bpy.ops.wm.quit_blender()
         script = script + "\n\n" + end_script
         return script, master_path
 
+	# REMOVE LETER
     @staticmethod
     def build_layout_script(filepath: str, version_path: str, collections: dict, setting_data: dict):
         tpl = Template(dedent("""
