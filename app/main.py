@@ -55,8 +55,8 @@ class MainUI(QMainWindow):
         # Set up tabs
         self.ui.tabWidget.clear()
         self.ui.tabWidget.addTab(HandleBLauncher(), "BLauncher")
-        self.ui.tabWidget.addTab(HandleSetupDepartment(), "Setup(preview)")
         self.ui.tabWidget.addTab(HandleBLauncherPreview(), "BLauncher(preview)")
+        self.ui.tabWidget.addTab(HandleSetupDepartment(), "Setup(preview)")
 
 # PyQt Program =====================================================================================
     def handle_logout(self):

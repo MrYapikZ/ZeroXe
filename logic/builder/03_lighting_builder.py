@@ -138,7 +138,6 @@ class LightingBuilder:
         # Get addon preset
         addon_preset_path = (
             addons_data.get("addons", {})
-            .get("ExLauncher", {})
             .get("ops_blp", {})
             .get("base_path", "")
         )
