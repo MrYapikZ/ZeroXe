@@ -165,7 +165,7 @@ class LightingBuilder:
             "frame_out": frame_out,
             "fps": fps,
             "resolution": resolution,
-            "ops_blp": addon_preset_file,
+            "ops_blp": str(addon_preset_file),
             "script_path": preset_path,
         }
 
@@ -464,5 +464,5 @@ if __name__ == "__main__":
         print(result)
 
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
+        print(f"Builder Error: {str(e)}", file=sys.stderr)
         sys.exit(1)

@@ -255,15 +255,9 @@ class CoreLauncher:
         current_department = self.get_dept_name_by_code(self.data, dept_code)
 
         # Get source path
-        source_department_code = (
+        source_department_name = (
             self.data["departments"].get(current_department, {}).get("source")
         )
-        source_department_name = current_department  # if no source use self
-        if source_department_code:
-            for dept_name, dept_info in self.data["departments"].items():
-                if dept_info.get("code") == source_department_code:
-                    source_department_name = dept_name
-                    break
 
         source_path, source_file = self.shot_path(
             department=source_department_name,
@@ -295,9 +289,9 @@ class CoreLauncher:
             mastershot_data = {"mastershots": self.data.get("mastershots", {})}
             addon_data = {"addons": self.data.get("addons", {})}
             filepath = {
-                "final": self.output_file,
-                "version": self.version_output_file,
-                "source": source_file,
+                "final": str(self.output_file),
+                "version": str(self.version_output_file),
+                "source": str(source_file),
             }
             args = [
                 "python",
@@ -372,5 +366,5 @@ if __name__ == "__main__":
         print(result)
 
     except Exception as e:
-        print(f"Error: {str(e)}", file=sys.stderr)
+        print(f"Core Error: {str(e)}", file=sys.stderr)
         sys.exit(1)

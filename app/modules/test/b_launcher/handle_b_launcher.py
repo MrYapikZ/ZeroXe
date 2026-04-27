@@ -858,8 +858,8 @@ class HandleBLauncherPreview(QWidget):
             str(self.zeroxe_core),
             json.dumps(self.zeroxe_conf),
             json.dumps(shot_data[0]),
-            file_path,
-            init_version_path,
+            str(file_path),
+            str(init_version_path),
         ]
         process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -893,7 +893,6 @@ class HandleBLauncherPreview(QWidget):
         else:
             create_script = generated_script
 
-        print(init_version_path)
         # Conttinue in here
         SubprocessServices.run_command(
             [blender_program, "-b", "--python-expr", create_script]
