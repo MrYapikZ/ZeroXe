@@ -513,9 +513,7 @@ class HandleBLauncherPreview(QWidget):
                 else "N/A"
             )
             author = file_log.get("author")
-            file_log["author"] = (
-                f"{PersonServices.get_person_by_id(author).get("first_name", "")} {PersonServices.get_person_by_id(author).get("last_name", "")}"
-            )
+            file_log["author"] = f"{PersonServices.get_person_by_id(author).get('first_name', '')} {PersonServices.get_person_by_id(author).get('last_name', '')}"
             file_log["locked"] = str(file_log["locked"])
         return file_log
 
@@ -777,8 +775,8 @@ class HandleBLauncherPreview(QWidget):
                 ),
                 "",
             )
-            master_path = Path(f"{base_path}/{item_data.get("shot_name", "")}")
-            file_path = master_path / f"{item_data.get("shot_name", "")}.blend"
+            master_path = Path(f"{base_path}/{item_data.get('shot_name', '')}")
+            file_path = master_path / f"{item_data.get('shot_name', '')}.blend"
             return str(master_path), str(file_path)
 
         if not base_path:

@@ -372,7 +372,7 @@ class HandleBLauncher(QWidget):
             timestamp = file_log.get("date")
             file_log["date"] = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "N/A"
             author = file_log.get("author")
-            file_log["author"] = f"{PersonServices.get_person_by_id(author).get("first_name", "")} {PersonServices.get_person_by_id(author).get("last_name", "")}"
+            file_log["author"] = f"{PersonServices.get_person_by_id(author).get('first_name', '')} {PersonServices.get_person_by_id(author).get('last_name', '')}"
             file_log["locked"] = str(file_log["locked"])
         return file_log
 
