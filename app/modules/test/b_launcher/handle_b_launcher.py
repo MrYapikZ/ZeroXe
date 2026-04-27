@@ -214,6 +214,7 @@ class HandleBLauncherPreview(QWidget):
         elif self.ui.comboBox_entity.currentIndex() == 2:
             shot_data = item.data(Qt.ItemDataRole.UserRole)
             self.load_metadata(shot_data["shot_id"])
+        self.reload_version_metadata()
 
     def on_widget_version_double_click(self, item: QListWidgetItem):
         version_name = item.text()
@@ -276,6 +277,10 @@ class HandleBLauncherPreview(QWidget):
                     timestamp=time.time(),
                     author=self.user_id,
                 )
+        # check again if not exist return
+        if not file_path.exists():
+            return
+        file_path = Path(self.selected_path)
 
         VersioningSystem.update_log(
             base_path=str(master_path),
@@ -460,6 +465,7 @@ class HandleBLauncherPreview(QWidget):
     def load_sequence_and_shot(self):
         self.ui.listWidget_list.clear()
         episode_id = self.ui.comboBox_episode.currentData()
+        episode_name = self.ui.comboBox_episode.currentText()
         if episode_id is None:
             return
 
@@ -474,6 +480,8 @@ class HandleBLauncherPreview(QWidget):
             seq_name = seq_lookup.get(shot["parent_id"]) or ""
             shot_name = shot["name"]
             item_name = f"{seq_name}_{shot_name}"
+            if "lib" in episode_name:
+                item_name = shot_name
 
             item = QListWidgetItem(item_name)
             item.setData(
@@ -649,7 +657,6 @@ class HandleBLauncherPreview(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
             self.ui.listWidget_version.addItem(item)
         self.ui.listWidget_list.sortItems()
-        print(version_info_list)
         if version_info_list:
             latest_version_data = version_info_list[-1]
             self.selected_path = latest_version_data["full_path"]
@@ -761,6 +768,18 @@ class HandleBLauncherPreview(QWidget):
             .get(selected_department, {})
             .get("base_path", "")
         )
+        if "lib" in episode_name:
+            base_path = next(
+                (
+                    config.get("base_path", "")
+                    for config in self.zeroxe_conf.get("library", {}).values()
+                    if config.get("code") == episode_name
+                ),
+                "",
+            )
+            master_path = Path(f"{base_path}/{item_data.get("shot_name", "")}")
+            file_path = master_path / f"{item_data.get("shot_name", "")}.blend"
+            return str(master_path), str(file_path)
 
         if not base_path:
             QMessageBox.warning(
@@ -794,7 +813,7 @@ class HandleBLauncherPreview(QWidget):
         master_path, file_path = "", ""
         if self.ui.comboBox_entity.currentIndex() == 1 or select == 1:
             # Build asset path
-            selected_department = self.ui.comboBox_department.currentText().lower()
+            selected_department = self.ui.comboBox_department.currentText()
             base_path = (
                 self.zeroxe_conf.get("departments", {})
                 .get(selected_department, {})
@@ -852,16 +871,31 @@ class HandleBLauncherPreview(QWidget):
         generated_script = None
         if process.returncode == 0:
             generated_script = stdout
-            # print("Successfully generated script!")
+            print("Successfully generated script!")
         else:
             print(f"Failed: {stderr}")
 
         if not generated_script:
-            QMessageBox.warning(self, "Warning", "Builder script not found.")
-            return
+            reply = QMessageBox.warning(
+                self,
+                "Warning",
+                "Builder script not found. Do you want to continue with an empty blend file?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
 
-        create_script = generated_script
+            if reply == QMessageBox.StandardButton.Yes:
+                # User chose to continue
+                init_version_path.parent.mkdir(parents=True, exist_ok=True)
+                create_script = f"import bpy; bpy.ops.wm.save_as_mainfile(filepath='{file_path}'); bpy.ops.wm.save_as_mainfile(filepath='{init_version_path}')"
+            else:
+                # User chose not to continue
+                return
+            # return
+        else:
+            create_script = generated_script
 
+        print(init_version_path)
         # Conttinue in here
         SubprocessServices.run_command(
             [blender_program, "-b", "--python-expr", create_script]
@@ -881,6 +915,7 @@ class HandleBLauncherPreview(QWidget):
             timestamp=time.time(),
             author=self.user_id,
         )
+        self.load_version()
 
     # region List search function
     def wire_search_list(self):

@@ -44,7 +44,7 @@
 ### Build Executable
 
 ```
-pyinstaller --clean --noconsole --onefile -n ZeroXe -p . --collect-submodules app app/main.py
+pyinstaller --clean --noconsole --onefile -n ZeroXe -p . --collect-submodules app --add-data ".env:." app/main.py
 ```
 
 ---

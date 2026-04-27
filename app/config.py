@@ -1,7 +1,9 @@
 import os
 import platform
 import json
+import sys
 from cryptography.fernet import Fernet
+from dotenv import load_dotenv
 
 def get_config_dir(app_name="myapp") -> str:
     system = platform.system()
@@ -18,9 +20,6 @@ class Settings:
     APP_NAME = "ZerØXe"
     BUILD_VERSION = "v0.0.10"
 
-    KITSU_API_URL="http://192.168.99.38/api"
-    KITSU_ALT_API_URL="http://patokitsu.synology.me/api"
-
     VERSIONING_FOLDER="progress"
     VERSIONING_LOG_FOLDER=".zeroxe"
     VERSIONING_STARTWITH="v"
@@ -35,9 +34,50 @@ class Settings:
     os.makedirs(os.path.dirname(AVATAR_FILE), exist_ok=True)
 
     def __init__(self):
-        fernet_key = ""
+        env_paths = [
+            os.path.join(os.path.dirname(__file__), '.env'),  # Same directory as this file
+            os.path.join(os.getcwd(), '.env'),  # Current working directory
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'),  # Absolute path of this file
+        ]
+        
+        env_loaded = False
+        for env_path in env_paths:
+            if os.path.exists(env_path):
+                load_dotenv(env_path)
+                env_loaded = True
+                print(f"Loaded .env from: {env_path}")
+                break
+        
+        if not env_loaded:
+            # Try loading without specific path (searches default locations)
+            load_dotenv()
+            print("Loaded .env from default locations")
+            
+        # Get configuration from environment variables
+        self.KITSU_API_URL = os.environ.get("KITSU_API_URL")
+        self.KITSU_ALT_API_URL = os.environ.get("KITSU_ALT_API_URL")
+        
+        # Validate required configuration
+        if not self.KITSU_API_URL:
+            raise ValueError("KITSU_API_URL environment variable not set. Please configure it in your .env file.")
+        
+        if not self.KITSU_ALT_API_URL:
+            raise ValueError("KITSU_ALT_API_URL environment variable not set. Please configure it in your .env file.")
+        # Get FERNET_KEY from environment
+        fernet_key = os.environ.get("FERNET_KEY")
+        
         if not fernet_key:
-            raise ValueError("FERNET_KEY environment variable not set. Please configure it in your .env file.")
+            # Check if running as PyInstaller bundle
+            if getattr(sys, 'frozen', False):
+                # Running as compiled executable
+                base_path = sys._MEIPASS
+                env_path = os.path.join(base_path, '.env')
+                if os.path.exists(env_path):
+                    load_dotenv(env_path)
+                    fernet_key = os.environ.get("FERNET_KEY")
+            
+            if not fernet_key:
+                raise ValueError("FERNET_KEY environment variable not set. Please configure it in your .env file.")
         # Fernet expects the key as bytes (already base64-encoded from .env)
         key_bytes = fernet_key.encode() if isinstance(fernet_key, str) else fernet_key
         self.cipher = Fernet(key_bytes)
