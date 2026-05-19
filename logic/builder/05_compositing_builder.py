@@ -130,7 +130,7 @@ class CompositingBuilder:
             if asset_type_id in asset_type_map:
                 category_key, config = asset_type_map[asset_type_id]
                 if category_key.lower().startswith("ms_"):
-                    if category_key.lower().startswith("ms_comp", ""):
+                    if category_key.lower() == "ms_comp":
                         comp_mastershot_name = asset.get("name", "")
                         lit_mastershot_base_path = config.get("base_path", "")
                     if category_key in asset_types:

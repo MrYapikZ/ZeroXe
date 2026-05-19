@@ -54,6 +54,7 @@ class HandleBLauncherPreview(QWidget):
         self.paths = []
         self.assets = []
         self.asset_types = []
+        self.batch_mode = False
 
         self.selected_item = {}
         self.selected_path = ""
@@ -109,6 +110,8 @@ class HandleBLauncherPreview(QWidget):
         self.ui.radioButton_showMaster.toggled.connect(
             lambda checked: self.load_version(checked)
         )
+        self.ui.checkBox_batch.toggled.connect(self.on_batch_checklist)
+        self.ui.pushButton_batch.clicked.connect(self.generate_batch)
 
     def on_department_change(self):
         projects = ProjectServices.get_projects()
@@ -421,6 +424,17 @@ class HandleBLauncherPreview(QWidget):
                     self, "Error", f"Failed to replace master file: {str(e)}"
                 )
 
+    def on_batch_checklist(self): 
+        if self.ui.checkBox_batch.isChecked():
+            self.batch_mode = True
+            self.ui.listWidget_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+            self.ui.listWidget_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+            self.ui.pushButton_batch.setEnabled(True)
+        else:
+            self.batch_mode = False
+            self.ui.listWidget_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+            self.ui.pushButton_batch.setEnabled(False)
+        
     # endregion
 
     # region Populate data
@@ -566,7 +580,7 @@ class HandleBLauncherPreview(QWidget):
         self.ui.tableView_metadata.setWordWrap(True)
 
     # Table view task and metadata trigger
-    def load_metadata(self, asset_or_shot_id):
+    def load_metadata(self, asset_or_shot_id, use_master: bool = False):
         if asset_or_shot_id is None:
             return
 
@@ -625,7 +639,7 @@ class HandleBLauncherPreview(QWidget):
             self.ui.tableView_task.setModel(task_model)
             self.ui.tableView_task.setWordWrap(True)
 
-        self.load_version()
+        self.load_version(show_master=use_master)
 
     # List view version
     def load_version(self, show_master: bool = False):
@@ -655,11 +669,13 @@ class HandleBLauncherPreview(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, version_info["full_path"])
             self.ui.listWidget_version.addItem(item)
         self.ui.listWidget_list.sortItems()
-        if version_info_list:
+        if show_master:
+            self.ui.listWidget_version.setCurrentRow(0)
+        elif version_info_list:
             latest_version_data = version_info_list[-1]
             self.selected_path = latest_version_data["full_path"]
             last_row_index = self.ui.listWidget_version.count() - 1
-            self.ui.listWidget_version.setCurrentRow(last_row_index)
+            self.ui.listWidget_version.setCurrentRow(last_row_index)   
 
     # Table view metadata for version
     def load_version_metadata(self, version_name: str, version_path: str):
@@ -717,14 +733,18 @@ class HandleBLauncherPreview(QWidget):
         )
 
     # Table view metadata refersh for version
-    def reload_version_metadata(self):
-        version_item = self.ui.listWidget_version.currentItem()
-        version_name = "Master" if version_item is None else version_item.text()
-        version_path = (
-            self.selected_path
-            if version_item is None
-            else version_item.data(Qt.ItemDataRole.UserRole)
-        )
+    def reload_version_metadata(self, use_master: bool = False):
+        if use_master:
+            version_name = "Master"
+            version_path = self.selected_path
+        else:
+            version_item = self.ui.listWidget_version.currentItem()
+            version_name = "Master" if version_item is None else version_item.text()
+            version_path = (
+                self.selected_path
+                if version_item is None
+                else version_item.data(Qt.ItemDataRole.UserRole)
+            )
         self.load_version_metadata(version_name, str(version_path))
 
     # endregion
@@ -825,6 +845,25 @@ class HandleBLauncherPreview(QWidget):
         return str(master_path), str(file_path)
 
     # endregion
+    def generate_batch(self):
+        if not self.ui.listWidget_list.selectedItems():
+            QMessageBox.warning(self, "Warning", "No shot or asset selected.")
+            return
+        # master_path, full_path = self.shot_or_asset_path()
+        # full_path_list = []
+        selected_items = self.ui.listWidget_list.selectedItems()
+        for item in selected_items:
+            self.ui.listWidget_list.setCurrentItem(item)
+            if self.ui.comboBox_entity.currentIndex() == 1:
+                asset_id = item.data(Qt.ItemDataRole.UserRole)
+                self.load_metadata(asset_id, use_master=True)
+            elif self.ui.comboBox_entity.currentIndex() == 2:
+                shot_data = item.data(Qt.ItemDataRole.UserRole)
+                self.load_metadata(shot_data["shot_id"], use_master=True)
+            self.reload_version_metadata(use_master=True)
+            print(self.selected_path)
+            self.create_and_replace_file()
+        pass
 
     def create_and_replace_file(self):
         file_path = Path(self.selected_path)
@@ -875,7 +914,6 @@ class HandleBLauncherPreview(QWidget):
         else:
             print(f"Failed: {stderr}")
 
-        print(generated_script)
         if not generated_script:
             reply = QMessageBox.warning(
                 self,

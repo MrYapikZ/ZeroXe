@@ -19,11 +19,6 @@ class Ui_Form(object):
         self.gridLayout_main.setObjectName("gridLayout_main")
         self.gridLayout_function = QtWidgets.QGridLayout()
         self.gridLayout_function.setObjectName("gridLayout_function")
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
-        self.gridLayout_function.addItem(spacerItem, 1, 0, 1, 2)
-        self.pushButton_unlock = QtWidgets.QPushButton(parent=Form)
-        self.pushButton_unlock.setObjectName("pushButton_unlock")
-        self.gridLayout_function.addWidget(self.pushButton_unlock, 4, 0, 1, 2)
         self.gridWidget_blenderPath = QtWidgets.QWidget(parent=Form)
         self.gridWidget_blenderPath.setStyleSheet("#gridWidget_blenderPath .QWidget {\n"
 "background-color: White;\n"
@@ -58,31 +53,70 @@ class Ui_Form(object):
         self.gridLayout_blenderPath.addWidget(self.label_blenderPath, 0, 0, 1, 2)
         self.gridLayout_function.addWidget(self.gridWidget_blenderPath, 0, 0, 1, 2)
         self.pushButton_upVersion = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_upVersion.setEnabled(True)
         self.pushButton_upVersion.setObjectName("pushButton_upVersion")
-        self.gridLayout_function.addWidget(self.pushButton_upVersion, 3, 1, 1, 1)
-        self.pushButton_upMaster = QtWidgets.QPushButton(parent=Form)
-        self.pushButton_upMaster.setObjectName("pushButton_upMaster")
-        self.gridLayout_function.addWidget(self.pushButton_upMaster, 3, 0, 1, 1)
+        self.gridLayout_function.addWidget(self.pushButton_upVersion, 5, 1, 1, 1)
         self.pushButton_open = QtWidgets.QPushButton(parent=Form)
         self.pushButton_open.setStyleSheet(".QPushButton {\n"
-"border: none;\n"
-"background-color:  black;\n"
-"border-radius: 5%;\n"
-"color: white;\n"
-"padding:4px;\n"
+"    border: none;\n"
+"    background-color: black;\n"
+"    border-radius: 5%;\n"
+"    color: white;\n"
+"    padding: 4px;\n"
+"}\n"
+"\n"
+".QPushButton:hover {\n"
+"    background-color: #333333;\n"
+"    color: white;\n"
+"    border: none;\n"
+"}\n"
+"\n"
+".QPushButton:pressed {\n"
+"    background-color: #666666;\n"
+"    color: #e0e0e0;\n"
+"    padding: 5px 4px 3px 4px;\n"
 "}")
         self.pushButton_open.setObjectName("pushButton_open")
-        self.gridLayout_function.addWidget(self.pushButton_open, 5, 0, 1, 2)
+        self.gridLayout_function.addWidget(self.pushButton_open, 7, 0, 1, 2)
+        self.pushButton_upMaster = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_upMaster.setObjectName("pushButton_upMaster")
+        self.gridLayout_function.addWidget(self.pushButton_upMaster, 5, 0, 1, 1)
+        self.pushButton_unlock = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_unlock.setObjectName("pushButton_unlock")
+        self.gridLayout_function.addWidget(self.pushButton_unlock, 6, 0, 1, 2)
         self.pushButton_replace = QtWidgets.QPushButton(parent=Form)
         self.pushButton_replace.setStyleSheet(".QPushButton {\n"
-"border: none;\n"
-"background-color:  red;\n"
-"border-radius: 5%;\n"
-"color: white;\n"
-"padding:4px;\n"
+"    border: none;\n"
+"    background-color: red;\n"
+"    border-radius: 5%;\n"
+"    color: white;\n"
+"    padding: 4px;\n"
+"}\n"
+"\n"
+".QPushButton:hover {\n"
+"    background-color: #ff3333;\n"
+"    color: white;\n"
+"    border: none;\n"
+"}\n"
+"\n"
+".QPushButton:pressed {\n"
+"    background-color: #cc0000;\n"
+"    color: #f0f0f0;\n"
+"    padding: 5px 4px 3px 4px;\n"
 "}")
         self.pushButton_replace.setObjectName("pushButton_replace")
-        self.gridLayout_function.addWidget(self.pushButton_replace, 2, 0, 1, 2)
+        self.gridLayout_function.addWidget(self.pushButton_replace, 4, 0, 1, 2)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
+        self.gridLayout_function.addItem(spacerItem, 1, 0, 1, 2)
+        self.checkBox_batch = QtWidgets.QCheckBox(parent=Form)
+        self.checkBox_batch.setObjectName("checkBox_batch")
+        self.gridLayout_function.addWidget(self.checkBox_batch, 2, 0, 1, 1)
+        self.pushButton_batch = QtWidgets.QPushButton(parent=Form)
+        self.pushButton_batch.setEnabled(False)
+        self.pushButton_batch.setStyleSheet("")
+        self.pushButton_batch.setCheckable(False)
+        self.pushButton_batch.setObjectName("pushButton_batch")
+        self.gridLayout_function.addWidget(self.pushButton_batch, 2, 1, 1, 1)
         self.gridLayout_main.addLayout(self.gridLayout_function, 1, 1, 1, 1)
         self.gridWidget_metadata = QtWidgets.QWidget(parent=Form)
         self.gridWidget_metadata.setStyleSheet(".QTableView {\n"
@@ -240,13 +274,15 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.pushButton_unlock.setText(_translate("Form", "Unlock"))
         self.toolButton_blenderPath.setText(_translate("Form", "Locate"))
         self.label_blenderPath.setText(_translate("Form", "Blender"))
         self.pushButton_upVersion.setText(_translate("Form", "UpVersion"))
-        self.pushButton_upMaster.setText(_translate("Form", "UpMaster"))
         self.pushButton_open.setText(_translate("Form", "Open"))
+        self.pushButton_upMaster.setText(_translate("Form", "UpMaster"))
+        self.pushButton_unlock.setText(_translate("Form", "Unlock"))
         self.pushButton_replace.setText(_translate("Form", "Replace"))
+        self.checkBox_batch.setText(_translate("Form", "Batch"))
+        self.pushButton_batch.setText(_translate("Form", "Start Batch"))
         self.label_metadata.setText(_translate("Form", "Metadata"))
         self.label_task.setText(_translate("Form", "Task"))
         self.label_version.setText(_translate("Form", "Version"))

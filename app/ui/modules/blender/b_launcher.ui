@@ -79,11 +79,23 @@ padding: 2px;
         <widget class="QPushButton" name="pushButton_open">
          <property name="styleSheet">
           <string notr="true">.QPushButton {
-border: none;
-background-color:  black;
-border-radius: 5%;
-color: white;
-padding:4px;
+    border: none;
+    background-color: black;
+    border-radius: 5%;
+    color: white;
+    padding: 4px;
+}
+
+.QPushButton:hover {
+    background-color: #333333;
+    color: white;
+    border: none;
+}
+
+.QPushButton:pressed {
+    background-color: #666666;
+    color: #e0e0e0;
+    padding: 5px 4px 3px 4px;
 }</string>
          </property>
          <property name="text">
@@ -109,11 +121,23 @@ padding:4px;
         <widget class="QPushButton" name="pushButton_replace">
          <property name="styleSheet">
           <string notr="true">.QPushButton {
-border: none;
-background-color:  red;
-border-radius: 5%;
-color: white;
-padding:4px;
+    border: none;
+    background-color: red;
+    border-radius: 5%;
+    color: white;
+    padding: 4px;
+}
+
+.QPushButton:hover {
+    background-color: #ff3333;
+    color: white;
+    border: none;
+}
+
+.QPushButton:pressed {
+    background-color: #cc0000;
+    color: #f0f0f0;
+    padding: 5px 4px 3px 4px;
 }</string>
          </property>
          <property name="text">

@@ -307,7 +307,7 @@ class CoreLauncher:
                 args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
             stdout, stderr = process.communicate()
-
+            generated_script = None
             if process.returncode == 0:
                 generated_script = stdout
                 # print("Successfully generated script!")
