@@ -853,6 +853,8 @@ class HandleBLauncherPreview(QWidget):
         shot_data = [i for i in self.shots if i["id"] == item_data.get("shot_id")]
         if shot_data is None or len(shot_data) == 0:
             return ""
+        shot_assets = AssetServices.get_assets_for_shot(shot_id=shot_data[0].get("id", ""))
+        shot_data[0]["assets"] = shot_assets
         args = [
             "python",
             str(self.zeroxe_core),
@@ -873,6 +875,7 @@ class HandleBLauncherPreview(QWidget):
         else:
             print(f"Failed: {stderr}")
 
+        print(generated_script)
         if not generated_script:
             reply = QMessageBox.warning(
                 self,

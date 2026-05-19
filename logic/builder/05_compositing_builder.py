@@ -117,19 +117,32 @@ class CompositingBuilder:
         Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
         
         # Get mastershot base path
-        mastershot_name = "mastershot_compositing"
-        current_mastershot = mastershots_data.get("mastershots", {}).get(
-            mastershot_name, {}
-        )
+        # mastershot_name = "mastershot_compositing"
+        # current_mastershot = mastershots_data.get("mastershots", {}).get(
+        #     mastershot_name, {}
+        # )
 
+        asset_types = asset_department.get("Asset", {}).get("asset_type", {})
+        shot_assets_content = shot_data.get("assets", [])
+        asset_type_map = {config["id"]: (category_key, config) for category_key, config in asset_types.items()}
+        for asset in shot_assets_content:
+            asset_type_id = asset["entity_type_id"]
+            if asset_type_id in asset_type_map:
+                category_key, config = asset_type_map[asset_type_id]
+                if category_key.lower().startswith("ms_"):
+                    if category_key.lower().startswith("ms_comp", ""):
+                        comp_mastershot_name = asset.get("name", "")
+                        lit_mastershot_base_path = config.get("base_path", "")
+                    if category_key in asset_types:
+                        del asset_types[category_key]
+                        
         # Get comp mastershot path
-        comp_mastershot_name = shot_data.get("data", {}).get("ms_comp", "")
+        # comp_mastershot_name = shot_data.get("data", {}).get("ms_comp", "")
         comp_mastershot_file = (
-            Path(current_mastershot.get("base_path", ""))
+            Path(lit_mastershot_base_path)
             / comp_mastershot_name
             / f"{comp_mastershot_name}.blend"
         )
-
         # Get preset
         dept_data = next(iter(current_department.values()))
         preset_name = "preset"

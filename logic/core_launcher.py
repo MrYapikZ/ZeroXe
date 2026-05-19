@@ -348,6 +348,10 @@ if __name__ == "__main__":
     # 1. Capture arguments from subprocess
     # We expect JSON strings for the dictionaries
     try:
+        if len(sys.argv) < 5:
+            print(f"Core Error: Expected 4 arguments, got {len(sys.argv)-1}", file=sys.stderr)
+            print("Usage: python script.py <department_json> <shot_json> <final_path> <version_path>", file=sys.stderr)
+            sys.exit(1)
         department_data = json.loads(sys.argv[1])
         shot_data = json.loads(sys.argv[2])
         final_file_path = sys.argv[-2]
@@ -365,6 +369,9 @@ if __name__ == "__main__":
         # 3. Print the result so the subprocess can "catch" it
         print(result)
 
+    except json.JSONDecodeError as e:
+        print(f"Core Error: Invalid JSON - {str(e)}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"Core Error: {str(e)}", file=sys.stderr)
         sys.exit(1)

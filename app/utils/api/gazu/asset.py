@@ -32,3 +32,7 @@ class AssetServices:
     @staticmethod
     def get_asset_types_by_project_id(project_id):
         return gazu_client.asset.all_asset_types_for_project(project_id)
+    
+    @staticmethod
+    def get_assets_for_shot(shot_id):
+        return gazu_client.asset.all_assets_for_shot(shot_id)

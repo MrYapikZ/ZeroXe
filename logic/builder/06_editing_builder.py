@@ -9,8 +9,8 @@ class EditingBuilder:
     def extract_data(self, filepath):
         full_path = Path(filepath['final'])
         episode_path = full_path.parents[2]
-        if episode_path.exists():
-            return
+        # if episode_path.exists():
+        #     return
         (episode_path / "progress").mkdir(parents=True, exist_ok=True)
         sequence_path = full_path.parents[1]
             

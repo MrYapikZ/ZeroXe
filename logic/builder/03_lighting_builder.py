@@ -117,15 +117,29 @@ class LightingBuilder:
         Path(filepath['version']).parent.mkdir(parents=True, exist_ok=True)
         
         # Get mastershot base path
-        mastershot_name = "mastershot_lit"
-        current_mastershot = mastershots_data.get("mastershots", {}).get(
-            mastershot_name, {}
-        )
+        # mastershot_name = "mastershot_lit"
+        # current_mastershot = mastershots_data.get("mastershots", {}).get(
+        #     mastershot_name, {}
+        # )
 
         # Get lit mastershot path
-        lit_mastershot_name = shot_data.get("data", {}).get("ms_lit", "")
+        # lit_mastershot_name = shot_data.get("data", {}).get("ms_lit", "")
+        asset_types = asset_department.get("Asset", {}).get("asset_type", {})
+        shot_assets_content = shot_data.get("assets", [])
+        asset_type_map = {config["id"]: (category_key, config) for category_key, config in asset_types.items()}
+        for asset in shot_assets_content:
+            asset_type_id = asset["entity_type_id"]
+            if asset_type_id in asset_type_map:
+                category_key, config = asset_type_map[asset_type_id]
+                if category_key.lower().startswith("ms_"):
+                    if category_key.lower().startswith("ms_lit", ""):
+                        lit_mastershot_name = asset.get("name", "")
+                        lit_mastershot_base_path = config.get("base_path", "")
+                    if category_key in asset_types:
+                        del asset_types[category_key]
+        
         lit_mastershot_file = (
-            Path(current_mastershot.get("base_path", ""))
+            Path(lit_mastershot_base_path)
             / lit_mastershot_name
             / f"{lit_mastershot_name}.blend"
         )
@@ -144,7 +158,7 @@ class LightingBuilder:
         addon_preset_file = Path(addon_preset_path) / f"{lit_mastershot_name}.json"
 
         # Collection list
-        asset_types = asset_department.get("Asset", {}).get("asset_type", {})
+        # asset_types = asset_department.get("Asset", {}).get("asset_type", {})
         collection_list = [
             (config.get("code"), config.get("prefix"))
             for config in asset_types.values()

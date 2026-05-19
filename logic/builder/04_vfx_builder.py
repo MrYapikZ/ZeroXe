@@ -123,6 +123,14 @@ class VFXBuilder():
         
         # Collection list
         asset_types = asset_department.get("Asset", {}).get("asset_type", {})
+        shot_assets_content = shot_data.get("assets", [])
+        asset_type_map = {config["id"]: (category_key, config) for category_key, config in asset_types.items()}
+        for asset in shot_assets_content:
+            asset_type_id = asset["entity_type_id"]
+            if asset_type_id in asset_type_map:
+                category_key, config = asset_type_map[asset_type_id]
+                if category_key.lower().startswith("ms_") and category_key in asset_types:
+                    del asset_types[category_key]
         collection_list = [
             (config.get("code"), config.get("prefix"))
             for config in asset_types.values()
@@ -404,7 +412,7 @@ bpy.ops.wm.quit_blender()
                 script = (
                     script
                     + "\n\n"
-                    + preset_code.replace("$SETTINGS", json.dumps(setting_data))
+                    + preset_code
                     + "\n\n"
                 )
         script = script + end_script

@@ -99,20 +99,38 @@ class LayoutBuilder:
         # Get all asset list by asset type
         relative_assets = {}
         asset_types = asset_department["Asset"]["asset_type"]
-        shot_data_content = shot_data.get("data", {})
-        for category_key, config in asset_types.items():
-            lookup_key = category_key.lower()
-            raw_string = shot_data_content.get(lookup_key, "")
-            asset_list = [
-                item.strip() for item in raw_string.split(",") if item.strip()
-            ]
-            if asset_list:
-                relative_assets[category_key] = {
-                    "assets": asset_list,
-                    "base_path": config.get("base_path"),
-                    "prefix": config.get("prefix"),
-                    "code": config.get("code"),
-                }
+        shot_assets_content = shot_data.get("assets", [])
+        # Build lookup mapping for O(1) access
+        asset_type_map = {config["id"]: (category_key, config) for category_key, config in asset_types.items()}
+
+        # Group assets by their category
+        for asset in shot_assets_content:
+            asset_type_id = asset["entity_type_id"]
+            if asset_type_id in asset_type_map:
+                category_key, config = asset_type_map[asset_type_id]
+                
+                if category_key not in relative_assets and not category_key.startswith("MS_"):
+                    relative_assets[category_key] = {
+                        "assets": [],
+                        "base_path": config.get("base_path"),
+                        "prefix": config.get("prefix"),
+                        "code": config.get("code"),
+                    }
+                relative_assets[category_key]["assets"].append(asset["name"])
+        # shot_data_content = shot_data.get("data", {})
+        # for category_key, config in asset_types.items():
+        #     lookup_key = category_key.lower()
+        #     raw_string = shot_data_content.get(lookup_key, "")
+        #     asset_list = [
+        #         item.strip() for item in raw_string.split(",") if item.strip()
+        #     ]
+        #     if asset_list:
+        #         relative_assets[category_key] = {
+        #             "assets": asset_list,
+        #             "base_path": config.get("base_path"),
+        #             "prefix": config.get("prefix"),
+        #             "code": config.get("code"),
+        #         }  
 
         # Construct collection dict
         collections_dict = {}
